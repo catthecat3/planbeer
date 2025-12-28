@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>HOP & BARREL — Пиво с характером</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    /* Кнопки craft */
+    .btn-craft {
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.25s cubic-bezier(.4,0,.2,1), box-shadow 0.25s ease, background 0.3s ease;
+    }
+    .btn-craft::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,.25), transparent 70%);
+      transform: translateX(-100%);
+      transition: transform .6s ease;
+    }
+    .btn-craft:hover::after { transform: translateX(100%); }
+    .btn-craft:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 18px 40px rgba(0,0,0,.35); }
+    .btn-craft:active { transform: scale(0.97); }
+
+    .social-btn { transition: transform .25s ease, color .25s ease; }
+    .social-btn:hover { transform: translateY(-4px) rotate(-2deg) scale(1.08); }
+
+    /* Fade-up для блоков */
+    .fade-up { opacity: 0; transform: translateY(40px); transition: all .8s cubic-bezier(.4,0,.2,1); }
+    .fade-up.show { opacity: 1; transform: translateY(0); }
+  </style>
+
+</head>
+<body class="font-body bg-slate-50 text-slate-900">
+
+<!-- HERO -->
+<section class="relative min-h-screen fade-up">
+  <img src="https://i.pinimg.com/originals/db/35/9a/db359a8ae87f8a076305374c30765d85.jpg"
+       class="absolute inset-0 w-full h-full object-cover">
+
+  <div class="absolute inset-0 bg-black/60"></div>
+
+  <div class="relative z-10 h-full flex items-center">
+    <div class="max-w-3xl mx-auto px-6 text-white text-center flex flex-col items-center">
+      <h1 class="font-heading text-5xl md:text-6xl lg:text-7xl mb-6">HOP & BARREL — Пиво с характером</h1>
+      <p class="text-lg md:text-xl text-slate-200 mb-10 max-w-xl">Крафтовое и классическое пиво в Альметьевске</p>
+
+      <div class="flex flex-col sm:flex-row gap-4">
+        <a href="catalog2.html" class="btn-craft bg-amber-500 px-8 py-4 rounded-xl text-black font-semibold w-fit">Перейти в каталог</a>
+        <a href="#contacts" class="btn-craft border border-white/40 px-8 py-4 rounded-xl w-fit">Контакты</a>
+      </div>
+
+      <div class="flex gap-6 mt-8 text-white/90 text-sm">
+        <a href="https://t.me/USERNAME_TG" target="_blank" class="social-btn flex items-center gap-2 hover:text-amber-400 transition">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M9.999 15.17l-.397 4.06c.568 0 .814-.244 1.112-.536l2.668-2.53 5.53 4.04c1.014.56 1.734.266 1.99-.94L24 3.9c.33-1.51-.546-2.1-1.533-1.74L1.1 9.5c-1.47.57-1.45 1.38-.27 1.75l5.53 1.72L19.2 5.4c.61-.37 1.17-.17.71.21"/>
+          </svg>
+          Мы в Telegram
+        </a>
+        <a href="https://instagram.com/USERNAME_IG" target="_blank" class="social-btn flex items-center gap-2 hover:text-amber-400 transition">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M7.75 2h8.5C19.55 2 22 4.46 22 7.75v8.5C22 19.55 19.54 22 16.25 22h-8.5C4.45 22 2 19.54 2 16.25v-8.5C2 4.45 4.46 2 7.75 2zm0 1.5A4.26 4.26 0 003.5 7.75v8.5A4.26 4.26 0 007.75 20.5h8.5a4.26 4.26 0 004.25-4.25v-8.5A4.26 4.26 0 0016.25 3.5zM12 7a5 5 0 110 10 5 5 0 010-10zm0 1.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7zm5.25-.88a1.13 1.13 0 11-2.26 0 1.13 1.13 0 012.26 0z"/>
+          </svg>
+          Instagram
+        </a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section class="py-24 fade-up">
+  <div class="max-w-6xl mx-auto px-6 text-center">
+    <h2 class="font-heading text-4xl mb-6">О магазине</h2>
+    <p class="text-slate-600 max-w-2xl mx-auto">
+      HOP & BARREL — магазин пивных напитков с отобранным ассортиментом,
+      где ценят вкус, свежесть и атмосферу.
+    </p>
+  </div>
+</section>
+
+<!-- CONTACTS -->
+<section id="contacts" class="bg-slate-900 text-white py-20 fade-up">
+  <div class="max-w-4xl mx-auto px-6 text-center">
+    <h3 class="font-heading text-3xl mb-8">Контакты</h3>
+    <p class="mb-3 text-lg">📍 Альметьевск</p>
+    <p class="mb-3 text-lg">📞 +7 (999) 123-45-67</p>
+    <p class="text-lg">🕒 10:00 — 23:00</p>
+  </div>
+</section>
+
+<footer class="text-center py-6 text-sm text-slate-500">© 2025 HOP & BARREL • 18+</footer>
+
+<script>
+  // fade-up анимация
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => { if(entry.isIntersecting) entry.target.classList.add("show"); });
+  }, {threshold:0.15});
+  document.querySelectorAll(".fade-up").forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
