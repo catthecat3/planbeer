@@ -2,114 +2,798 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>PLAN BEER — Пиво с характером</title>
+  <title>BeerShop — Премиум коллекция пива</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Inter', sans-serif; }
-    .font-heading { font-family: 'Cinzel Decorative', cursive; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: 'Montserrat', sans-serif; 
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      color: #fff;
+      overflow-x: hidden;
+    }
 
-    /* Кнопки craft */
-    .btn-craft {
-      position: relative;
+    /* Анимации */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-20px); }
+    }
+
+    @keyframes shine {
+      to { background-position: 200% center; }
+    }
+
+    .animate-fade-in { animation: fadeInUp 0.8s ease-out forwards; }
+    .animate-float { animation: float 3s ease-in-out infinite; }
+
+    /* Кнопки */
+    .btn-primary {
+      background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%);
+      color: #000;
+      font-weight: 700;
+      padding: 14px 32px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 10px 30px rgba(251, 191, 36, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 40px rgba(251, 191, 36, 0.4);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      color: #fff;
+      font-weight: 600;
+      padding: 12px 24px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    /* Карточки товаров */
+    .product-card {
+      background: rgba(30, 41, 59, 0.6);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
       overflow: hidden;
-      transition: transform 0.25s cubic-bezier(.4,0,.2,1), box-shadow 0.25s ease, background 0.3s ease;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
     }
-    .btn-craft::after {
-      content: "";
+
+    .product-card:hover {
+      transform: translateY(-10px);
+      border-color: rgba(251, 191, 36, 0.5);
+      box-shadow: 0 20px 60px rgba(251, 191, 36, 0.2);
+    }
+
+    .product-card::before {
+      content: '';
       position: absolute;
-      inset: 0;
-      background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,.25), transparent 70%);
-      transform: translateX(-100%);
-      transition: transform .6s ease;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.1), transparent);
+      transition: left 0.5s;
     }
-    .btn-craft:hover::after { transform: translateX(100%); }
-    .btn-craft:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 18px 40px rgba(0,0,0,.35); }
-    .btn-craft:active { transform: scale(0.97); }
 
-    .social-btn { transition: transform .25s ease, color .25s ease; }
-    .social-btn:hover { transform: translateY(-4px) rotate(-2deg) scale(1.08); }
+    .product-card:hover::before {
+      left: 100%;
+    }
 
-    .fade-up { opacity: 0; transform: translateY(40px); transition: all .8s cubic-bezier(.4,0,.2,1); }
-    .fade-up.show { opacity: 1; transform: translateY(0); }
+    .product-image {
+      width: 100%;
+      height: 280px;
+      object-fit: cover;
+      transition: transform 0.5s;
+    }
+
+    .product-card:hover .product-image {
+      transform: scale(1.1);
+    }
+
+    /* Значки */
+    .badge {
+      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+      color: #000;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      display: inline-block;
+    }
+
+    .badge-new {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #fff;
+    }
+
+    /* Фичи */
+    .feature-card {
+      background: rgba(30, 41, 59, 0.5);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 32px;
+      transition: all 0.3s;
+    }
+
+    .feature-card:hover {
+      background: rgba(30, 41, 59, 0.7);
+      border-color: rgba(251, 191, 36, 0.3);
+      transform: translateY(-5px);
+    }
+
+    /* Корзина */
+    .cart-badge {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: #ef4444;
+      color: #fff;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    /* Модалки */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(5px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal.active { display: flex; }
+
+    .modal-content {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
+      animation: fadeInUp 0.3s ease-out;
+    }
+
+    /* Категории */
+    .category-btn {
+      background: rgba(30, 41, 59, 0.5);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: 600;
+    }
+
+    .category-btn:hover {
+      border-color: rgba(251, 191, 36, 0.5);
+      background: rgba(30, 41, 59, 0.8);
+    }
+
+    .category-btn.active {
+      background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%);
+      color: #000;
+      border-color: transparent;
+    }
+
+    /* Параллакс эффект */
+    .parallax-bg {
+      position: absolute;
+      width: 200%;
+      height: 200%;
+      top: -50%;
+      left: -50%;
+      background: 
+        radial-gradient(circle at 20% 30%, rgba(251, 191, 36, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
+      animation: float 20s ease-in-out infinite;
+    }
+
+    /* Скролл бар */
+    ::-webkit-scrollbar { width: 10px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { 
+      background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 100%);
+      border-radius: 10px;
+    }
+
+    /* Адаптив */
+    @media (max-width: 768px) {
+      .hero-title { font-size: 2rem !important; }
+      .product-image { height: 220px; }
+    }
+	/* === HERO BACKGROUND ONLY (SAFE) === */
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image: url("https://i.pinimg.com/originals/db/35/9a/db359a8ae87f8a076305374c30765d85.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.hero-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(15, 23, 42, 0.65),
+    rgba(15, 23, 42, 0.95)
+  );
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .hero-bg {
+    background-position: top;
+  }
+
+  .hero-bg::after {
+    background: linear-gradient(
+      180deg,
+      rgba(15, 23, 42, 0.8),
+      rgba(15, 23, 42, 0.98)
+    );
+  }
+}
+
   </style>
 </head>
-<body class="font-body bg-slate-50 text-slate-900">
+<body>
 
-<!-- HERO -->
-<section class="relative min-h-screen fade-up">
-  <img src="https://i.pinimg.com/originals/db/35/9a/db359a8ae87f8a076305374c30765d85.jpg"
-       class="absolute inset-0 w-full h-full object-cover">
-  <div class="absolute inset-0 bg-black/60"></div>
+<!-- Параллакс фон -->
+<div class="parallax-bg"></div>
 
-  <!-- Центрируем текст по центру фото -->
-  <div class="absolute inset-0 flex justify-center items-center">
-    <div class="text-center px-6">
-      <h1 class="font-heading text-5xl md:text-6xl lg:text-7xl mb-4 text-white">HOP & BARREL — Пиво с характером</h1>
-      <p class="text-lg md:text-xl text-slate-200 mb-8 max-w-xl mx-auto">Крафтовое и классическое пиво в Альметьевске</p>
-
-      <div class="flex flex-col sm:flex-row gap-4 items-center justify-center">
-        <a href="catalog2.html" class="btn-craft bg-amber-500 px-8 py-4 rounded-xl text-black font-semibold w-fit">Перейти в каталог</a>
-        <a href="#contacts" class="btn-craft border border-white/40 text-white hover:text-amber-400 px-8 py-4 rounded-xl w-fit">Контакты</a>
+<!-- Хедер -->
+<header class="sticky top-0 z-50 bg-slate-900/90 backdrop-blur-lg border-b border-white/10">
+  <div class="max-w-7xl mx-auto px-4 py-4">
+    <div class="flex justify-between items-center">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-500 rounded-lg flex items-center justify-center text-2xl">
+          🍺
+        </div>
+        <div>
+          <h1 class="text-xl font-bold">BeerShop</h1>
+          <p class="text-xs text-slate-400">Премиум пиво</p>
+        </div>
       </div>
 
-      <div class="flex gap-6 mt-8 text-white/90 text-sm justify-center">
-        <a href="https://t.me/USERNAME_TG" target="_blank" class="social-btn flex items-center gap-2 hover:text-amber-400 transition">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M9.999 15.17l-.397 4.06c.568 0 .814-.244 1.112-.536l2.668-2.53 5.53 4.04c1.014.56 1.734.266 1.99-.94L24 3.9c.33-1.51-.546-2.1-1.533-1.74L1.1 9.5c-1.47.57-1.45 1.38-.27 1.75l5.53 1.72L19.2 5.4c.61-.37 1.17-.17.71.21"/>
-          </svg>
-          Мы в Telegram
+      <nav class="hidden md:flex gap-6">
+        <a href="#catalog" class="text-slate-300 hover:text-amber-400 transition font-medium">Каталог</a>
+        <a href="#about" class="text-slate-300 hover:text-amber-400 transition font-medium">О нас</a>
+        <a href="#delivery" class="text-slate-300 hover:text-amber-400 transition font-medium">Доставка</a>
+        <a href="#contacts" class="text-slate-300 hover:text-amber-400 transition font-medium">Контакты</a>
+      </nav>
+
+      <div class="flex items-center gap-4">
+        <button onclick="openCart()" class="relative btn-secondary">
+          🛒 Корзина
+          <span id="cartBadge" class="cart-badge hidden">0</span>
+        </button>
+        <a href="admin.html" target="_blank" class="hidden md:block text-amber-400 hover:text-amber-300 transition">
+          👑 Админ
         </a>
-        <a href="https://instagram.com/USERNAME_IG" target="_blank" class="social-btn flex items-center gap-2 hover:text-amber-400 transition">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M7.75 2h8.5C19.55 2 22 4.46 22 7.75v8.5C22 19.55 19.54 22 16.25 22h-8.5C4.45 22 2 19.54 2 16.25v-8.5C2 4.45 4.46 2 7.75 2zm0 1.5A4.26 4.26 0 003.5 7.75v8.5A4.26 4.26 0 007.75 20.5h8.5a4.26 4.26 0 004.25-4.25v-8.5A4.26 4.26 0 0016.25 3.5zM12 7a5 5 0 110 10 5 5 0 010-10zm0 1.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7zm5.25-.88a1.13 1.13 0 11-2.26 0 1.13 1.13 0 012.26 0z"/>
-          </svg>
-          Instagram
-        </a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Главный экран -->
+<section class="relative min-h-screen flex items-center justify-center px-4 pt-20 overflow-hidden">
+  
+  <div class="hero-bg"></div>
+
+  <div class="max-w-7xl mx-auto text-center hero-content">
+    <div class="animate-fade-in" style="animation-delay: 0.2s">
+      <span class="badge-new badge mb-4">НОВИНКА 2024</span>
+      <h1 class="hero-title text-5xl md:text-7xl font-extrabold mb-6 bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500 bg-clip-text text-transparent">
+        Премиум коллекция пива
+      </h1>
+      <p class="text-xl md:text-2xl text-slate-300 mb-8 max-w-2xl mx-auto">
+        Отборные сорта со всего мира для настоящих ценителей
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <button onclick="document.getElementById('catalog').scrollIntoView({behavior:'smooth'})" class="btn-primary">
+          👉 Перейти к каталогу
+        </button>
+        <button class="btn-secondary">
+          📞 Связаться с нами
+        </button>
+      </div>
+    </div>
+
+    <!-- Пивная кружка с анимацией -->
+    <div class="mt-12 animate-float">
+      <div class="text-9xl">🍺</div>
+    </div>
+  </div>
+</section>
+
+<!-- Преимущества -->
+<section class="py-20 px-4 relative">
+  <div class="max-w-7xl mx-auto">
+    <h2 class="text-4xl font-bold text-center mb-12">Почему выбирают нас</h2>
+    
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="feature-card">
+        <div class="text-5xl mb-4">🚚</div>
+        <h3 class="text-xl font-bold mb-2">Быстрая доставка</h3>
+        <p class="text-slate-400">Доставим ваш заказ в течение 2 часов по Москве</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="text-5xl mb-4">⭐</div>
+        <h3 class="text-xl font-bold mb-2">Премиум качество</h3>
+        <p class="text-slate-400">Только проверенные бренды и лучшие сорта</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="text-5xl mb-4">🎁</div>
+        <h3 class="text-xl font-bold mb-2">Гарантия качества</h3>
+        <p class="text-slate-400">Возврат в течение 7 дней без вопросов</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ABOUT -->
-<section class="py-24 fade-up">
-  <div class="max-w-6xl mx-auto px-6 text-center">
-    <h2 class="font-heading text-4xl mb-6">О магазине</h2>
-    <p class="text-slate-600 max-w-2xl mx-auto">
-      HOP & BARREL — магазин пивных напитков с отобранным ассортиментом,
-      где ценят вкус, свежесть и атмосферу.
+<!-- Каталог -->
+<section id="catalog" class="py-20 px-4 relative">
+  <div class="max-w-7xl mx-auto">
+    <div class="text-center mb-12">
+      <h2 class="text-4xl md:text-5xl font-bold mb-4">Популярные позиции</h2>
+      <p class="text-slate-400 text-lg">Лучшие предложения для вас</p>
+    </div>
+
+    <!-- Фильтр категорий -->
+    <div class="flex flex-wrap gap-3 justify-center mb-12">
+      <button class="category-btn active" onclick="filterCategory('all')">Все</button>
+      <button class="category-btn" onclick="filterCategory('Пиво')">🍺 Пиво</button>
+      <button class="category-btn" onclick="filterCategory('Крафтовое пиво')">🍻 Крафтовое</button>
+      <button class="category-btn" onclick="filterCategory('Сидр')">🍎 Сидр</button>
+      <button class="category-btn" onclick="filterCategory('Закуски')">🥨 Закуски</button>
+    </div>
+
+    <!-- Список товаров -->
+    <div id="productsList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Товары загружаются из JS -->
+    </div>
+  </div>
+</section>
+
+<!-- О нас -->
+<section id="about" class="py-20 px-4 bg-slate-900/50">
+  <div class="max-w-5xl mx-auto text-center">
+    <h2 class="text-4xl font-bold mb-6">О нашем магазине</h2>
+    <p class="text-lg text-slate-300 mb-8">
+      BeerShop — это команда настоящих ценителей пива, которые отбирают для вас только лучшие сорта со всего мира. 
+      Мы работаем напрямую с производителями, чтобы гарантировать свежесть и качество каждой бутылки.
     </p>
+    <div class="grid md:grid-cols-3 gap-6 text-center">
+      <div>
+        <div class="text-4xl font-bold text-amber-400 mb-2">500+</div>
+        <p class="text-slate-400">Сортов пива</p>
+      </div>
+      <div>
+        <div class="text-4xl font-bold text-amber-400 mb-2">10K+</div>
+        <p class="text-slate-400">Довольных клиентов</p>
+      </div>
+      <div>
+        <div class="text-4xl font-bold text-amber-400 mb-2">5 лет</div>
+        <p class="text-slate-400">На рынке</p>
+      </div>
+    </div>
   </div>
 </section>
 
-<!-- CONTACTS -->
-<section id="contacts" class="bg-slate-900 text-white py-20 fade-up">
-  <div class="max-w-4xl mx-auto px-6 text-center">
-    <h3 class="font-heading text-3xl mb-8">Контакты</h3>
-    <p class="mb-3 text-lg">📍 Альметьевск</p>
-    <p class="mb-3 text-lg">📞 +7 (999) 123-45-67</p>
-    <p class="text-lg">🕒 10:00 — 23:00</p>
+<!-- Футер -->
+<footer class="bg-slate-950 py-12 px-4 border-t border-white/10">
+  <div class="max-w-7xl mx-auto text-center">
+    <div class="flex justify-center items-center gap-3 mb-4">
+      <div class="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center text-3xl">
+        🍺
+      </div>
+      <h3 class="text-2xl font-bold">BeerShop</h3>
+    </div>
+    <p class="text-slate-400 mb-6">Премиум коллекция пива со всего мира</p>
+    <div class="flex flex-wrap justify-center gap-6 mb-6">
+      <a href="#" class="text-slate-400 hover:text-amber-400 transition">Каталог</a>
+      <a href="#" class="text-slate-400 hover:text-amber-400 transition">О нас</a>
+      <a href="#" class="text-slate-400 hover:text-amber-400 transition">Доставка</a>
+      <a href="#" class="text-slate-400 hover:text-amber-400 transition">Контакты</a>
+    </div>
+    <p class="text-slate-500 text-sm">© 2024 BeerShop. Все права защищены.</p>
+    <p class="text-slate-600 text-xs mt-2">Чрезмерное употребление алкоголя вредит вашему здоровью</p>
   </div>
-</section>
+</footer>
 
-<footer class="text-center py-6 text-sm text-slate-500">© 2025 HOP & BARREL • 18+</footer>
+<!-- Модалка корзины -->
+<div id="cartModal" class="modal">
+  <div class="modal-content p-6">
+    <div class="flex justify-between items-center mb-6">
+      <h3 class="text-2xl font-bold">🛒 Ваша корзина</h3>
+      <button onclick="closeCart()" class="text-3xl hover:text-amber-400 transition">&times;</button>
+    </div>
+    
+    <div id="cartItems" class="space-y-4 mb-6 max-h-96 overflow-y-auto">
+      <!-- Товары в корзине -->
+    </div>
+
+    <div class="border-t border-white/10 pt-4 mb-6">
+      <div class="flex justify-between items-center text-xl font-bold">
+        <span>Итого:</span>
+        <span id="cartTotal" class="text-amber-400">0 ₽</span>
+      </div>
+    </div>
+
+    <button onclick="openCheckout()" class="w-full btn-primary">
+      Оформить заказ
+    </button>
+  </div>
+</div>
+
+<!-- Модалка оформления -->
+<div id="checkoutModal" class="modal">
+  <div class="modal-content p-6">
+    <div class="flex justify-between items-center mb-6">
+      <h3 class="text-2xl font-bold">📋 Оформление заказа</h3>
+      <button onclick="closeCheckout()" class="text-3xl hover:text-amber-400 transition">&times;</button>
+    </div>
+
+    <form onsubmit="submitOrder(event)" class="space-y-4">
+      <div>
+        <label class="block text-sm font-semibold mb-2">Ваше имя</label>
+        <input type="text" id="orderName" required
+               class="w-full bg-slate-800 border border-white/10 rounded-lg px-4 py-3 focus:border-amber-400 focus:outline-none transition">
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold mb-2">Телефон</label>
+        <input type="tel" id="orderPhone" required
+               class="w-full bg-slate-800 border border-white/10 rounded-lg px-4 py-3 focus:border-amber-400 focus:outline-none transition"
+               placeholder="+7 (___) ___-__-__">
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold mb-2">Комментарий (необязательно)</label>
+        <textarea id="orderComment" rows="3"
+                  class="w-full bg-slate-800 border border-white/10 rounded-lg px-4 py-3 focus:border-amber-400 focus:outline-none transition"></textarea>
+      </div>
+
+      <div class="border-t border-white/10 pt-4">
+        <div class="flex justify-between mb-4">
+          <span class="text-lg">Итого:</span>
+          <span id="checkoutTotal" class="text-xl font-bold text-amber-400">0 ₽</span>
+        </div>
+        <button type="submit" class="w-full btn-primary">
+          ✅ Подтвердить заказ
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
 
 <script>
-  // IntersectionObserver для повторной анимации
-  const observer = new IntersectionObserver(entries => {
-    entries.forEach(entry => {
-      if(entry.isIntersecting) {
-        entry.target.classList.add("show");
-      } else {
-        entry.target.classList.remove("show"); // убираем при выходе
-      }
-    });
-  }, { threshold: 0.15 });
+// Данные
+let products = [];
+let cart = [];
+let currentCategory = 'all';
 
-  document.querySelectorAll(".fade-up").forEach(el => observer.observe(el));
+// Загрузка товаров
+function loadProducts() {
+  const stored = localStorage.getItem('products');
+  if (stored) {
+    products = JSON.parse(stored);
+  } else {
+    products = [
+      {
+        name: 'Балтика 7',
+        desc: 'Классическое светлое • 0.5л • 5.4%',
+        category: 'Пиво',
+        image: 'https://images.unsplash.com/photo-1608270586620-248524c67de9?w=400',
+        price: 85,
+        isNew: false
+      },
+      {
+        name: 'IPA Craftmaster',
+        desc: 'Крафтовое IPA • 0.5л • 6.5%',
+        category: 'Крафтовое пиво',
+        image: 'https://images.unsplash.com/photo-1535958636474-b021ee887b13?w=400',
+        price: 320,
+        isNew: true
+      },
+      {
+        name: 'Жигули Барное',
+        desc: 'Классика СССР • 0.5л • 4.5%',
+        category: 'Пиво',
+        image: 'https://images.unsplash.com/photo-1618885472179-5e474019f2a9?w=400',
+        price: 120,
+        isNew: false
+      },
+      {
+        name: 'Сидр яблочный',
+        desc: 'Освежающий сидр • 0.5л • 5.0%',
+        category: 'Сидр',
+        image: 'https://images.unsplash.com/photo-1570737197190-f14d10d193e2?w=400',
+        price: 145,
+        isNew: false
+      },
+      {
+        name: 'Wheat Beer Premium',
+        desc: 'Нефильтрованное • 0.5л • 5.2%',
+        category: 'Крафтовое пиво',
+        image: 'https://images.unsplash.com/photo-1436076863939-06870fe779c2?w=400',
+        price: 280,
+        isNew: true
+      },
+      {
+        name: 'Чипсы пивные',
+        desc: 'Солёные снеки • 150г',
+        category: 'Закуски',
+        image: 'https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=400',
+        price: 95,
+        isNew: false
+      }
+    ];
+  }
+  renderProducts();
+}
+
+// Рендер товаров
+function renderProducts() {
+  const container = document.getElementById('productsList');
+  const filtered = currentCategory === 'all' 
+    ? products 
+    : products.filter(p => p.category === currentCategory);
+
+  container.innerHTML = filtered.map((product, index) => `
+    <div class="product-card" style="animation-delay: ${index * 0.1}s">
+      <div class="relative overflow-hidden">
+        <img src="${product.image}" class="product-image" 
+             onerror="this.src='https://via.placeholder.com/400x280?text=Beer'">
+        ${product.isNew ? '<span class="absolute top-4 right-4 badge-new badge">NEW</span>' : ''}
+        <div class="absolute top-4 left-4 badge">${product.category}</div>
+      </div>
+      <div class="p-5">
+        <h3 class="text-xl font-bold mb-2">${product.name}</h3>
+        <p class="text-slate-400 text-sm mb-4">${product.desc}</p>
+        <div class="flex justify-between items-center">
+          <span class="text-2xl font-bold text-amber-400">${product.price} ₽</span>
+          <button onclick="addToCart(${index})" class="btn-primary text-sm px-6 py-2">
+            В корзину
+          </button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Фильтр категорий
+function filterCategory(category) {
+  currentCategory = category;
+  document.querySelectorAll('.category-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  event.target.classList.add('active');
+  renderProducts();
+}
+
+// Добавить в корзину
+function addToCart(index) {
+  const product = products[index];
+  const existing = cart.find(item => item.name === product.name);
+  
+  if (existing) {
+    existing.count++;
+  } else {
+    cart.push({ ...product, count: 1 });
+  }
+  
+  updateCart();
+  showToast('✅ Товар добавлен в корзину!');
+}
+
+// Обновить корзину
+function updateCart() {
+  const badge = document.getElementById('cartBadge');
+  const total = cart.reduce((sum, item) => sum + item.count, 0);
+  
+  if (total > 0) {
+    badge.textContent = total;
+    badge.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
+  }
+}
+
+// Открыть корзину
+function openCart() {
+  const modal = document.getElementById('cartModal');
+  const container = document.getElementById('cartItems');
+  
+  if (cart.length === 0) {
+    container.innerHTML = '<p class="text-center text-slate-400 py-8">Корзина пуста</p>';
+  } else {
+    container.innerHTML = cart.map((item, index) => `
+      <div class="flex gap-4 bg-slate-800/50 p-4 rounded-xl">
+        <img src="${item.image}" class="w-20 h-20 object-cover rounded-lg">
+        <div class="flex-1">
+          <h4 class="font-bold">${item.name}</h4>
+          <p class="text-sm text-slate-400">${item.price} ₽</p>
+        </div>
+        <div class="flex flex-col items-end justify-between">
+          <button onclick="removeFromCart(${index})" class="text-red-400 hover:text-red-300">×</button>
+          <div class="flex items-center gap-2">
+            <button onclick="decreaseCount(${index})" class="w-8 h-8 bg-slate-700 rounded-lg hover:bg-slate-600">−</button>
+            <span class="w-8 text-center font-bold">${item.count}</span>
+            <button onclick="increaseCount(${index})" class="w-8 h-8 bg-slate-700 rounded-lg hover:bg-slate-600">+</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+  
+  const total = cart.reduce((sum, item) => sum + (item.price * item.count), 0);
+  document.getElementById('cartTotal').textContent = total + ' ₽';
+  modal.classList.add('active');
+}
+
+function closeCart() {
+  document.getElementById('cartModal').classList.remove('active');
+}
+
+function increaseCount(index) {
+  cart[index].count++;
+  openCart();
+  updateCart();
+}
+
+function decreaseCount(index) {
+  if (cart[index].count > 1) {
+    cart[index].count--;
+  } else {
+    cart.splice(index, 1);
+  }
+  openCart();
+  updateCart();
+}
+
+function removeFromCart(index) {
+  cart.splice(index, 1);
+  openCart();
+  updateCart();
+}
+
+// Оформление заказа
+function openCheckout() {
+  if (cart.length === 0) {
+    showToast('❌ Корзина пуста!', 'error');
+    return;
+  }
+  
+  const total = cart.reduce((sum, item) => sum + (item.price * item.count), 0);
+  document.getElementById('checkoutTotal').textContent = total + ' ₽';
+  
+  closeCart();
+  document.getElementById('checkoutModal').classList.add('active');
+}
+
+function closeCheckout() {
+  document.getElementById('checkoutModal').classList.remove('active');
+}
+
+function submitOrder(e) {
+  e.preventDefault();
+  
+  const name = document.getElementById('orderName').value;
+  const phone = document.getElementById('orderPhone').value;
+  const comment = document.getElementById('orderComment').value;
+  
+  const order = {
+    id: Date.now(),
+    date: new Date().toLocaleString('ru-RU'),
+    name,
+    phone,
+    comment,
+    items: cart.map(item => ({
+      name: item.name,
+      count: item.count,
+      price: item.price,
+      total: item.price * item.count
+    })),
+    total: cart.reduce((sum, item) => sum + (item.price * item.count), 0),
+    status: 'new'
+  };
+  
+  // Сохранить заказ
+  const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+  orders.push(order);
+  localStorage.setItem('orders', JSON.stringify(orders));
+  
+  // Очистить корзину
+  cart = [];
+  updateCart();
+  closeCheckout();
+  
+  showToast('🎉 Заказ оформлен! Мы свяжемся с вами в ближайшее время.', 'success');
+  
+  // Очистить форму
+  document.getElementById('orderName').value = '';
+  document.getElementById('orderPhone').value = '';
+  document.getElementById('orderComment').value = '';
+}
+
+// Уведомления
+function showToast(message, type = 'success') {
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: ${type === 'success' ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #ef4444, #dc2626)'};
+    color: white;
+    padding: 16px 24px;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    z-index: 9999;
+    animation: fadeInUp 0.3s ease-out;
+    max-width: 350px;
+  `;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.style.animation = 'fadeInUp 0.3s ease-out reverse';
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+// Инициализация
+loadProducts();
+updateCart();
 </script>
 
 </body>
