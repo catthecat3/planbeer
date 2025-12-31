@@ -4,18 +4,21 @@
   <meta charset="UTF-8">
   <title>Каталог — PLAN BEER</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Inter', sans-serif; }
+    body { 
+      font-family: 'Inter', sans-serif;
+      background: var(--tg-theme-bg-color, #f1f5f9);
+      color: var(--tg-theme-text-color, #000);
+    }
     .font-heading { font-family: 'Playfair Display', serif; }
     
-    /* Prevent zoom on input focus */
     input, textarea, select {
       font-size: 16px !important;
     }
     
-    /* Prevent body scroll when modal is open */
     body.modal-open {
       overflow: hidden;
       position: fixed;
@@ -45,6 +48,7 @@
 
     .product-card {
       transition: transform .3s ease, box-shadow .3s ease;
+      background: var(--tg-theme-secondary-bg-color, #fff);
     }
     .product-card:hover {
       transform: translateY(-8px);
@@ -109,8 +113,8 @@
       white-space: nowrap;
       transition: all 0.2s;
       border: 2px solid #e2e8f0;
-      background: white;
-      color: #475569;
+      background: var(--tg-theme-button-color, white);
+      color: var(--tg-theme-button-text-color, #475569);
       cursor: pointer;
     }
     
@@ -144,7 +148,7 @@
     }
     
     .success-content {
-      background: white;
+      background: var(--tg-theme-bg-color, white);
       border-radius: 24px;
       padding: 32px;
       max-width: 400px;
@@ -164,20 +168,16 @@
       overflow-x: hidden;
     }
 
+    .telegram-theme {
+      background: var(--tg-theme-bg-color, #f1f5f9);
+    }
+
     @media (max-width: 768px) {
       .toast {
         right: 10px;
         left: 10px;
         min-width: auto;
         max-width: none;
-      }
-      
-      .parallax-bg {
-        width: 100%;
-        height: 100%;
-        top: 0;
-        left: 0;
-        animation: none;
       }
       
       .success-modal {
@@ -189,9 +189,24 @@
         overflow-y: auto;
       }
     }
+
+    .loading-spinner {
+      border: 3px solid #f3f4f6;
+      border-top: 3px solid #f59e0b;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
   </style>
 </head>
-<body class="bg-slate-50">
+<body class="telegram-theme">
 
 <header class="sticky top-0 bg-white shadow z-40">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center">
@@ -211,9 +226,14 @@
 <section id="productsGrid" class="max-w-7xl mx-auto px-4 sm:px-6 pb-24 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
 </section>
 
+<div id="loadingMessage" class="text-center py-20">
+  <div class="loading-spinner"></div>
+  <p class="text-slate-500 mt-4">Загрузка товаров...</p>
+</div>
+
 <div id="emptyMessage" class="hidden text-center py-20">
   <p class="text-xl sm:text-2xl text-slate-500 mb-4">📦 Товаров пока нет</p>
-  <p class="text-slate-400 text-sm sm:text-base">Зайдите в <a href="admin.html" class="text-amber-600 underline">админку</a> чтобы добавить товары</p>
+  <p class="text-slate-400 text-sm sm:text-base">Скоро здесь появятся товары!</p>
 </div>
 
 <button onclick="toggleCart()" class="fixed bottom-4 left-4 right-4 bg-slate-900 text-white py-4 rounded-xl font-semibold shadow-2xl z-30 md:hidden">
@@ -267,13 +287,49 @@
 </div>
 
 <script>
+// Конфигурация
+const TELEGRAM_BOT_TOKEN = "7771222532:AAGDFVMTmowCpNVCaY2Ca8o5otqQh0S_sts"; // Замените на токен вашего бота
+const TELEGRAM_CHAT_ID = "788399571"; // Замените на chat_id продавца
 const ADMIN_TG = "patikoroley";
 
 let cart = [];
 let products = [];
 let currentCategory = 'all';
+let isTelegramWebApp = false;
+let tg = null;
+
+// Инициализация Telegram WebApp
+function initTelegramWebApp() {
+  if (window.Telegram && window.Telegram.WebApp) {
+    tg = window.Telegram.WebApp;
+    isTelegramWebApp = true;
+    
+    // Расширяем WebApp на весь экран
+    tg.expand();
+    
+    // Применяем тему Telegram
+    document.body.style.backgroundColor = tg.themeParams.bg_color || '#f1f5f9';
+    
+    // Получаем данные пользователя
+    if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+      const user = tg.initDataUnsafe.user;
+      document.getElementById('customerName').value = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+    }
+    
+    console.log('Telegram WebApp initialized');
+  }
+}
 
 function showToast(message, type = 'success') {
+  // Используем Telegram уведомления если доступны
+  if (isTelegramWebApp && tg) {
+    if (type === 'success') {
+      tg.showAlert(message);
+    } else {
+      tg.showAlert(message);
+    }
+  }
+  
   const toast = document.createElement('div');
   toast.className = `toast ${type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500'} text-white`;
   const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
@@ -285,15 +341,73 @@ function showToast(message, type = 'success') {
   }, 3000);
 }
 
+// Отправка уведомления в Telegram бота
+async function sendTelegramNotification(order) {
+  // Формируем текст сообщения
+  let message = `🔔 <b>НОВЫЙ ЗАКАЗ №${order.id}</b>\n\n`;
+  message += `👤 <b>Имя:</b> ${order.name}\n`;
+  message += `📞 <b>Телефон:</b> ${order.phone}\n\n`;
+  message += `📦 <b>Товары:</b>\n`;
+  
+  order.items.forEach(item => {
+    message += `  • ${item.name} x${item.count} = ${item.total}₽\n`;
+  });
+  
+  message += `\n💰 <b>Итого:</b> ${order.total}₽\n`;
+  message += `\n🕐 <b>Время:</b> ${order.date}`;
+  
+  if (isTelegramWebApp && tg.initDataUnsafe.user) {
+    const user = tg.initDataUnsafe.user;
+    message += `\n\n👨‍💼 <b>Заказчик в Telegram:</b> @${user.username || 'без username'}`;
+    message += `\n🆔 <b>User ID:</b> ${user.id}`;
+  }
+
+  // Отправляем через Telegram Bot API
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        chat_id: TELEGRAM_CHAT_ID,
+        text: message,
+        parse_mode: 'HTML'
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (data.ok) {
+      console.log('Уведомление отправлено в Telegram');
+      return true;
+    } else {
+      console.error('Ошибка отправки в Telegram:', data);
+      return false;
+    }
+  } catch (error) {
+    console.error('Ошибка при отправке уведомления:', error);
+    return false;
+  }
+}
+
 function loadProducts() {
+  // Пытаемся загрузить из localStorage (для совместимости)
   const stored = localStorage.getItem('products');
   if (stored) {
     products = JSON.parse(stored);
   } else {
+    // Дефолтные товары
     products = [
-      { name: 'IPA Classic', desc: '0.5 л • 6.5%', category: 'Крафтовое пиво', image: 'https://i.pinimg.com/originals/db/35/9a/db359a8ae87f8a076305374c30765d85.jpg', price: 350 }
+      { name: 'IPA Classic', desc: '0.5 л • 6.5%', category: 'Крафтовое пиво', image: 'https://i.pinimg.com/originals/db/35/9a/db359a8ae87f8a076305374c30765d85.jpg', price: 350 },
+      { name: 'Wheat Beer', desc: '0.5 л • 5.2%', category: 'Пиво', image: 'https://i.pinimg.com/originals/db/35/9a/db359a8ae87f8a076305374c30765d85.jpg', price: 320 },
+      { name: 'Stout Dark', desc: '0.5 л • 7.0%', category: 'Крафтовое пиво', image: 'https://i.pinimg.com/originals/db/35/9a/db359a8ae87f8a076305374c30765d85.jpg', price: 380 }
     ];
   }
+  
+  // Скрываем загрузку
+  document.getElementById('loadingMessage').classList.add('hidden');
+  
   renderCategoryFilter();
   renderProducts();
 }
@@ -357,6 +471,11 @@ function addToCart(index) {
   updateCount();
   renderCart();
   showToast(`${product.name} добавлен в корзину!`);
+  
+  // Вибрация в Telegram
+  if (isTelegramWebApp && tg) {
+    tg.HapticFeedback.impactOccurred('light');
+  }
 }
 
 function updateCount() {
@@ -371,7 +490,6 @@ function toggleCart() {
   
   cartEl.classList.toggle("hidden");
   
-  // Toggle body scroll lock
   if (isHidden) {
     document.body.classList.add("modal-open");
   } else {
@@ -420,7 +538,7 @@ function renderCart() {
   totalEl.classList.remove('hidden');
 }
 
-function createOrder() {
+async function createOrder() {
   const name = document.getElementById("customerName").value.trim();
   const phone = document.getElementById("phone").value.trim();
   
@@ -462,10 +580,15 @@ function createOrder() {
     date: new Date().toLocaleString('ru-RU')
   };
   
+  // Сохраняем в localStorage
   let orders = JSON.parse(localStorage.getItem('orders') || '[]');
   orders.push(order);
   localStorage.setItem('orders', JSON.stringify(orders));
   
+  // Отправляем уведомление в Telegram
+  const telegramSent = await sendTelegramNotification(order);
+  
+  // Формируем ссылку для связи
   let orderText = `📋 Новый заказ №${orderId}%0A%0A👤 Имя: ${name}%0A📞 Телефон: ${phone}%0A%0A`;
   Object.keys(grouped).forEach(name => {
     const item = grouped[name];
@@ -476,12 +599,21 @@ function createOrder() {
   document.getElementById('orderNumber').textContent = `#${orderId}`;
   document.getElementById('tgLink').href = `https://t.me/${ADMIN_TG}?text=${orderText}`;
   
-  // Close cart and open success modal
+  // Закрываем корзину и показываем успех
   document.getElementById("cart").classList.add("hidden");
   document.getElementById('successModal').classList.remove('hidden');
-  
-  // Keep body scroll locked for success modal
   document.body.classList.add("modal-open");
+  
+  // Вибрация успеха в Telegram
+  if (isTelegramWebApp && tg) {
+    tg.HapticFeedback.notificationOccurred('success');
+  }
+  
+  if (telegramSent) {
+    console.log('✅ Уведомление отправлено в Telegram бот');
+  } else {
+    console.log('⚠️ Уведомление в Telegram не отправлено (проверьте настройки бота)');
+  }
   
   cart = [];
   updateCount();
@@ -490,9 +622,14 @@ function createOrder() {
 function closeSuccessModal() {
   document.getElementById('successModal').classList.add('hidden');
   document.body.classList.remove("modal-open");
+  
+  // Закрываем WebApp если в Telegram
+  if (isTelegramWebApp && tg) {
+    tg.close();
+  }
 }
 
-// Close modals on background click
+// Закрытие модалок по клику на фон
 document.getElementById('cart').addEventListener('click', function(e) {
   if (e.target === this) {
     toggleCart();
@@ -505,6 +642,8 @@ document.getElementById('successModal').addEventListener('click', function(e) {
   }
 });
 
+// Инициализация
+initTelegramWebApp();
 loadProducts();
 </script>
 </body>
