@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Каталог — PLAN BEER</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .font-heading { font-family: 'Playfair Display', serif; }
+    
+    .btn-craft {
+      position: relative;
+      overflow: hidden;
+      transition: transform .25s cubic-bezier(.4,0,.2,1), box-shadow .25s ease;
+    }
+    .btn-craft::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,.25), transparent 70%);
+      transform: translateX(-100%);
+      transition: transform .6s ease;
+    }
+    .btn-craft:hover::after { transform: translateX(100%); }
+    .btn-craft:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 18px 40px rgba(0,0,0,.35);
+    }
+    .btn-craft:active { transform: scale(0.97); }
+
+    .product-card {
+      transition: transform .3s ease, box-shadow .3s ease;
+    }
+    .product-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 25px 60px rgba(0,0,0,.4);
+    }
+
+    .fade-up {
+      opacity: 0;
+      transform: translateY(40px);
+      animation: fadeUp 0.6s ease-out forwards;
+    }
+    
+    @keyframes fadeUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      min-width: 300px;
+      max-width: 400px;
+      padding: 16px 20px;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      z-index: 9999;
+      animation: slideIn 0.3s ease-out;
+      backdrop-filter: blur(10px);
+    }
+    
+    @keyframes slideIn {
+      from { transform: translateX(400px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    
+    .toast.removing {
+      animation: slideOut 0.3s ease-out forwards;
+    }
+    
+    @keyframes slideOut {
+      to { transform: translateX(400px); opacity: 0; }
+    }
+
+    .category-filter {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      scrollbar-width: thin;
+    }
+    
+    .category-filter::-webkit-scrollbar { height: 4px; }
+    .category-filter::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+    .category-btn {
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-weight: 600;
+      white-space: nowrap;
+      transition: all 0.2s;
+      border: 2px solid #e2e8f0;
+      background: white;
+      color: #475569;
+      cursor: pointer;
+    }
+    
+    .category-btn:hover {
+      border-color: #f59e0b;
+      color: #f59e0b;
+    }
+    
+    .category-btn.active {
+      background: #f59e0b;
+      border-color: #f59e0b;
+      color: white;
+    }
+
+    .success-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      animation: fadeIn 0.3s ease-out;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    .success-content {
+      background: white;
+      border-radius: 24px;
+      padding: 32px;
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+      animation: scaleIn 0.3s ease-out;
+    }
+    
+    @keyframes scaleIn {
+      from { transform: scale(0.8); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    @media (max-width: 768px) {
+      .toast {
+        right: 10px;
+        left: 10px;
+        min-width: auto;
+        max-width: none;
+      }
+    }
+  </style>
+</head>
+<body class="bg-slate-50">
+
+<header class="sticky top-0 bg-white shadow z-40">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center">
+    <a href="index.html" class="font-heading text-xl sm:text-2xl hover:text-amber-600 transition">PLAN BEER</a>
+    <button onclick="toggleCart()" class="font-semibold hover:text-amber-600 transition text-sm sm:text-base">
+      🛒 Корзина (<span id="cartCount">0</span>)
+    </button>
+  </div>
+</header>
+
+<section class="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
+  <div class="category-filter" id="categoryFilter">
+    <button class="category-btn active" onclick="filterByCategory('all')">Все товары</button>
+  </div>
+</section>
+
+<section id="productsGrid" class="max-w-7xl mx-auto px-4 sm:px-6 pb-24 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+</section>
+
+<div id="emptyMessage" class="hidden text-center py-20">
+  <p class="text-xl sm:text-2xl text-slate-500 mb-4">📦 Товаров пока нет</p>
+  <p class="text-slate-400 text-sm sm:text-base">Зайдите в <a href="admin.html" class="text-amber-600 underline">админку</a> чтобы добавить товары</p>
+</div>
+
+<button onclick="toggleCart()" class="fixed bottom-4 left-4 right-4 bg-slate-900 text-white py-4 rounded-xl font-semibold shadow-2xl z-30 md:hidden">
+  🛒 Корзина (<span id="cartCountMobile">0</span>)
+</button>
+
+<!-- CART MODAL -->
+<div id="cart" class="fixed inset-0 bg-black/50 hidden z-50 flex items-end md:items-center justify-center">
+  <div class="bg-white rounded-t-3xl md:rounded-2xl p-4 sm:p-6 w-full md:max-w-md md:mx-4 max-h-[90vh] overflow-y-auto">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="font-heading text-xl sm:text-2xl">Ваш заказ</h2>
+      <button onclick="toggleCart()" class="text-3xl hover:text-red-500 transition">×</button>
+    </div>
+    
+    <div id="cartItems" class="mb-4"></div>
+    
+    <div id="cartTotal" class="border-t pt-4 mb-4 hidden">
+      <div class="flex justify-between text-lg sm:text-xl font-bold">
+        <span>Итого:</span>
+        <span id="totalPrice">0 ₽</span>
+      </div>
+    </div>
+    
+    <input id="customerName" placeholder="Ваше имя" 
+           class="w-full border-2 p-3 rounded-lg mb-3 focus:border-amber-500 focus:outline-none transition text-sm sm:text-base">
+    
+    <input id="phone" placeholder="Телефон для связи" 
+           class="w-full border-2 p-3 rounded-lg mb-4 focus:border-amber-500 focus:outline-none transition text-sm sm:text-base">
+    
+    <button onclick="createOrder()" 
+            class="w-full btn-craft bg-amber-500 py-3 sm:py-4 rounded-lg font-semibold text-sm sm:text-base">
+      Оформить заказ
+    </button>
+  </div>
+</div>
+
+<!-- SUCCESS MODAL -->
+<div id="successModal" class="success-modal hidden">
+  <div class="success-content">
+    <div class="text-6xl mb-4">✅</div>
+    <h2 class="text-2xl font-bold mb-2">Заказ оформлен!</h2>
+    <p class="text-slate-600 mb-6">Ваш заказ принят. Мы скоро свяжемся с вами для подтверждения.</p>
+    <p class="text-sm text-slate-500 mb-4">Номер заказа: <strong id="orderNumber"></strong></p>
+    <button onclick="closeSuccessModal()" class="bg-amber-500 px-6 py-3 rounded-lg font-semibold hover:bg-amber-600 transition mb-3 w-full">
+      Отлично!
+    </button>
+    <a id="tgLink" href="#" target="_blank" class="block text-sm text-amber-600 hover:text-amber-700 underline">
+      📱 Написать продавцу в Telegram
+    </a>
+  </div>
+</div>
+
+<script>
+const ADMIN_TG = "11:40 30.12.2025barrel_admin";
+
+let cart = [];
+let products = [];
+let currentCategory = 'all';
+
+function showToast(message, type = 'success') {
+  const toast = document.createElement('div');
+  toast.className = `toast ${type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500'} text-white`;
+  const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+  toast.innerHTML = `<div class="flex items-center gap-3"><span class="text-2xl">${icon}</span><span class="font-semibold flex-1">${message}</span></div>`;
+  document.body.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add('removing');
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+function loadProducts() {
+  const stored = localStorage.getItem('products');
+  if (stored) {
+    products = JSON.parse(stored);
+  } else {
+    products = [
+      { name: 'IPA Classic', desc: '0.5 л • 6.5%', category: 'Крафтовое пиво', image: 'https://i.pinimg.com/originals/db/35/9a/db359a8ae87f8a076305374c30765d85.jpg', price: 350 }
+    ];
+  }
+  renderCategoryFilter();
+  renderProducts();
+}
+
+function renderCategoryFilter() {
+  const categories = new Set(['all']);
+  products.forEach(p => {
+    if (p.category) categories.add(p.category);
+  });
+  const filterContainer = document.getElementById('categoryFilter');
+  const categoryButtons = Array.from(categories).map(cat => {
+    const isActive = cat === currentCategory;
+    const displayName = cat === 'all' ? 'Все товары' : cat;
+    return `<button class="category-btn ${isActive ? 'active' : ''}" onclick="filterByCategory('${cat}')">${displayName}</button>`;
+  }).join('');
+  filterContainer.innerHTML = categoryButtons;
+}
+
+function filterByCategory(category) {
+  currentCategory = category;
+  renderCategoryFilter();
+  renderProducts();
+}
+
+function renderProducts() {
+  const grid = document.getElementById('productsGrid');
+  const emptyMsg = document.getElementById('emptyMessage');
+  const filteredProducts = currentCategory === 'all' ? products : products.filter(p => p.category === currentCategory);
+  
+  if (filteredProducts.length === 0) {
+    grid.classList.add('hidden');
+    emptyMsg.classList.remove('hidden');
+    return;
+  }
+  
+  grid.classList.remove('hidden');
+  emptyMsg.classList.add('hidden');
+  
+  grid.innerHTML = filteredProducts.map((product, index) => {
+    const realIndex = products.indexOf(product);
+    return `
+      <div class="product-card bg-white rounded-2xl shadow hover:shadow-xl transition fade-up" style="animation-delay: ${index * 0.05}s">
+        <div class="relative">
+          <img src="${product.image}" class="rounded-t-2xl h-40 sm:h-48 w-full object-cover" alt="${product.name}" loading="lazy">
+          ${product.category ? `<span class="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded-full text-xs font-semibold">${product.category}</span>` : ''}
+        </div>
+        <div class="p-3 sm:p-4">
+          <h3 class="font-semibold mb-1 text-sm sm:text-base">${product.name}</h3>
+          <p class="text-xs sm:text-sm text-slate-600 mb-2">${product.desc}</p>
+          <p class="text-base sm:text-lg font-bold text-amber-600 mb-3">${product.price} ₽</p>
+          <button onclick="addToCart(${realIndex})" class="btn-craft mt-2 w-full bg-amber-500 py-2 rounded-lg font-semibold text-sm sm:text-base">В корзину</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function addToCart(index) {
+  const product = products[index];
+  cart.push({ name: product.name, price: product.price });
+  updateCount();
+  renderCart();
+  showToast(`${product.name} добавлен в корзину!`);
+}
+
+function updateCount() {
+  const count = cart.length;
+  document.getElementById("cartCount").innerText = count;
+  document.getElementById("cartCountMobile").innerText = count;
+}
+
+function toggleCart() {
+  document.getElementById("cart").classList.toggle("hidden");
+  renderCart();
+}
+
+function renderCart() {
+  const container = document.getElementById("cartItems");
+  const totalEl = document.getElementById("cartTotal");
+  
+  if (cart.length === 0) {
+    container.innerHTML = '<p class="text-center text-slate-500 py-8">Корзина пуста</p>';
+    totalEl.classList.add('hidden');
+    return;
+  }
+  
+  let total = 0;
+  const grouped = {};
+  cart.forEach(item => {
+    if (grouped[item.name]) {
+      grouped[item.name].count++;
+      grouped[item.name].total += item.price;
+    } else {
+      grouped[item.name] = { count: 1, price: item.price, total: item.price };
+    }
+    total += item.price;
+  });
+  
+  container.innerHTML = Object.keys(grouped).map(name => {
+    const item = grouped[name];
+    return `
+      <div class="flex justify-between items-center py-3 border-b">
+        <div class="flex-1">
+          <p class="font-semibold text-sm sm:text-base">${name}</p>
+          <p class="text-xs sm:text-sm text-slate-500">${item.count} шт × ${item.price} ₽</p>
+        </div>
+        <p class="font-bold text-sm sm:text-base">${item.total} ₽</p>
+      </div>
+    `;
+  }).join('');
+  
+  document.getElementById('totalPrice').textContent = total + ' ₽';
+  totalEl.classList.remove('hidden');
+}
+
+function createOrder() {
+  const name = document.getElementById("customerName").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+  
+  if (!name) {
+    showToast("Введите ваше имя!", 'error');
+    return;
+  }
+  
+  if (!phone) {
+    showToast("Введите телефон!", 'error');
+    return;
+  }
+  
+  if (cart.length === 0) {
+    showToast("Добавьте товары в корзину!", 'error');
+    return;
+  }
+  
+  const grouped = {};
+  cart.forEach(item => {
+    if (grouped[item.name]) {
+      grouped[item.name].count++;
+      grouped[item.name].total += item.price;
+    } else {
+      grouped[item.name] = { count: 1, price: item.price, total: item.price };
+    }
+  });
+  
+  const total = cart.reduce((sum, item) => sum + item.price, 0);
+  const orderId = Date.now();
+  
+  const order = {
+    id: orderId,
+    name: name,
+    phone: phone,
+    items: Object.keys(grouped).map(name => ({ name, count: grouped[name].count, total: grouped[name].total })),
+    total: total,
+    status: 'new',
+    date: new Date().toLocaleString('ru-RU')
+  };
+  
+  let orders = JSON.parse(localStorage.getItem('orders') || '[]');
+  orders.push(order);
+  localStorage.setItem('orders', JSON.stringify(orders));
+  
+  let orderText = `📋 Новый заказ №${orderId}%0A%0A👤 Имя: ${name}%0A📞 Телефон: ${phone}%0A%0A`;
+  Object.keys(grouped).forEach(name => {
+    const item = grouped[name];
+    orderText += `• ${name} x${item.count} = ${item.total}₽%0A`;
+  });
+  orderText += `%0A💰 Итого: ${total}₽`;
+  
+  document.getElementById('orderNumber').textContent = `#${orderId}`;
+  document.getElementById('tgLink').href = `https://t.me/${ADMIN_TG}?text=${orderText}`;
+  document.getElementById('successModal').classList.remove('hidden');
+  
+  cart = [];
+  updateCount();
+  toggleCart();
+}
+
+function closeSuccessModal() {
+  document.getElementById('successModal').classList.add('hidden');
+}
+
+loadProducts();
+</script>
+</body>
+</html>
