@@ -2,152 +2,206 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Админ-панель — BeerShop</title>
+  <title>Админка — PLAN BEER</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { 
-      font-family: 'Montserrat', sans-serif; 
-      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-      color: #fff;
+    body { font-family: 'Inter', sans-serif; }
+    .font-heading { font-family: 'Playfair Display', serif; }
+    
+    .btn-craft {
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.25s, box-shadow 0.25s;
+    }
+    .btn-craft:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 18px 40px rgba(0,0,0,0.35);
+    }
+    .btn-craft:active {
+      transform: scale(0.97);
     }
 
-    .btn-primary {
-      background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%);
-      color: #000;
-      font-weight: 700;
-      padding: 12px 24px;
-      border-radius: 10px;
-      border: none;
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      min-width: 300px;
+      max-width: 400px;
+      padding: 16px 20px;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      z-index: 9999;
+      animation: slideIn 0.3s ease-out;
+      backdrop-filter: blur(10px);
+    }
+    
+    @keyframes slideIn {
+      from { transform: translateX(400px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    
+    .toast.removing {
+      animation: slideOut 0.3s ease-out forwards;
+    }
+    
+    @keyframes slideOut {
+      to { transform: translateX(400px); opacity: 0; }
+    }
+
+    .input-with-label {
+      position: relative;
+    }
+    
+    .input-with-label input,
+    .input-with-label select,
+    .input-with-label textarea {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: all 0.2s;
+    }
+    
+    .input-with-label input:focus,
+    .input-with-label select:focus,
+    .input-with-label textarea:focus {
+      outline: none;
+      border-color: #f59e0b;
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+    }
+    
+    .input-with-label label {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #94a3b8;
+      font-size: 16px;
+      pointer-events: none;
+      transition: all 0.2s;
+      background: white;
+      padding: 0 4px;
+    }
+    
+    .input-with-label input:focus + label,
+    .input-with-label input:not(:placeholder-shown) + label,
+    .input-with-label select:focus + label,
+    .input-with-label select:not([value=""]) + label,
+    .input-with-label textarea:focus + label,
+    .input-with-label textarea:not(:placeholder-shown) + label {
+      top: 0;
+      font-size: 12px;
+      color: #f59e0b;
+    }
+
+    .image-upload {
+      border: 2px dashed #cbd5e1;
+      border-radius: 12px;
+      padding: 40px;
+      text-align: center;
       cursor: pointer;
       transition: all 0.3s;
+      background: #f8fafc;
     }
-
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 30px rgba(251, 191, 36, 0.3);
+    
+    .image-upload:hover {
+      border-color: #f59e0b;
+      background: #fffbeb;
     }
-
-    .card {
-      background: rgba(30, 41, 59, 0.6);
-      backdrop-filter: blur(10px);
-      border-radius: 16px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 24px;
+    
+    .image-upload.has-image {
+      padding: 0;
+      border: none;
     }
-
-    .input-field {
+    
+    .image-preview {
       width: 100%;
-      background: rgba(15, 23, 42, 0.5);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: #fff;
-      padding: 12px 16px;
-      border-radius: 8px;
-      transition: all 0.3s;
-    }
-
-    .input-field:focus {
-      outline: none;
-      border-color: #fbbf24;
-      box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.1);
+      height: 200px;
+      object-fit: cover;
+      border-radius: 12px;
     }
 
     .tab-btn {
       padding: 12px 24px;
-      background: transparent;
-      border: none;
-      color: #94a3b8;
       font-weight: 600;
-      cursor: pointer;
       border-bottom: 3px solid transparent;
-      transition: all 0.3s;
+      transition: all 0.2s;
+      cursor: pointer;
     }
-
-    .tab-btn:hover { color: #fbbf24; }
+    
+    .tab-btn:hover {
+      color: #f59e0b;
+    }
+    
     .tab-btn.active {
-      color: #fbbf24;
-      border-bottom-color: #fbbf24;
+      color: #f59e0b;
+      border-bottom-color: #f59e0b;
     }
 
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.8);
-      backdrop-filter: blur(5px);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
+    .stat-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 16px;
+      padding: 24px;
+      color: white;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     }
 
-    .modal.active { display: flex; }
-
-    .modal-content {
-      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 20px;
-      max-width: 600px;
-      width: 100%;
-      max-height: 90vh;
-      overflow-y: auto;
+    @media (max-width: 768px) {
+      .toast {
+        right: 10px;
+        left: 10px;
+        min-width: auto;
+        max-width: none;
+      }
     }
   </style>
 </head>
-<body>
+<body class="bg-slate-50">
 
-<!-- Экран входа -->
-<div id="loginScreen" class="min-h-screen flex items-center justify-center p-4">
-  <div class="card max-w-md w-full">
-    <div class="text-center mb-8">
-      <div class="text-6xl mb-4">🔐</div>
-      <h1 class="text-3xl font-bold mb-2">Вход в админ-панель</h1>
-      <p class="text-slate-400">BeerShop</p>
+<!-- Проверка пароля -->
+<div id="loginScreen" class="hidden min-h-screen flex items-center justify-center p-4">
+  <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-xl max-w-md w-full">
+    <h1 class="text-2xl sm:text-3xl font-bold mb-6 text-center">🔐 Вход в админку</h1>
+    <div class="input-with-label mb-4">
+      <input type="password" id="passwordInput" placeholder=" " 
+             onkeypress="if(event.key==='Enter') checkPassword()">
+      <label>Введите пароль</label>
     </div>
-    
-    <input type="password" id="passwordInput" placeholder="Введите пароль"
-           class="input-field mb-4" onkeypress="if(event.key==='Enter') checkPassword()">
-    
-    <button onclick="checkPassword()" class="w-full btn-primary">
+    <button onclick="checkPassword()" 
+            class="w-full bg-amber-500 text-black font-bold py-4 rounded-lg hover:bg-amber-600 transition">
       Войти
     </button>
-    
-    <p class="text-center text-slate-500 text-sm mt-4">
-      Пароль: <code class="bg-slate-800 px-2 py-1 rounded">admin123</code>
-    </p>
+    <p class="text-sm text-slate-500 mt-4 text-center">Пароль по умолчанию: <code class="bg-slate-100 px-2 py-1 rounded">admin123</code></p>
   </div>
 </div>
 
-<!-- Админ-панель -->
+<!-- Админка -->
 <div id="adminPanel" class="hidden">
-  <!-- Хедер -->
-  <header class="bg-slate-900/90 backdrop-blur-lg border-b border-white/10 sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 py-4">
-      <div class="flex justify-between items-center">
-        <div>
-          <h1 class="text-2xl font-bold">👑 Админ-панель</h1>
-          <p class="text-sm text-slate-400">Управление магазином BeerShop</p>
-        </div>
-        <div class="flex gap-3">
-          <a href="index.html" target="_blank" class="btn-primary text-sm px-4 py-2">
-            🌐 На сайт
-          </a>
-          <button onclick="logout()" class="bg-red-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-600 transition">
-            Выйти
-          </button>
-        </div>
+  <!-- Шапка -->
+  <header class="bg-slate-900 text-white py-3 sm:py-4 sticky top-0 z-40 shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-0">
+      <div class="text-center sm:text-left">
+        <h1 class="text-xl sm:text-2xl font-bold">👑 Админка PLAN BEER</h1>
+        <p class="text-xs sm:text-sm text-slate-400">Управление товарами и заказами</p>
+      </div>
+      <div class="flex gap-2 sm:gap-4 w-full sm:w-auto">
+        <a href="index.html" class="flex-1 sm:flex-none bg-amber-500 px-3 sm:px-4 py-2 rounded-lg font-semibold text-black hover:bg-amber-600 transition text-center text-sm sm:text-base">
+          На сайт
+        </a>
+        <button onclick="logout()" class="flex-1 sm:flex-none bg-red-500 px-3 sm:px-4 py-2 rounded-lg font-semibold hover:bg-red-600 transition text-sm sm:text-base">
+          Выйти
+        </button>
       </div>
     </div>
   </header>
 
-  <div class="max-w-7xl mx-auto p-4">
+  <div class="max-w-7xl mx-auto p-4 sm:p-6">
+    
     <!-- Табы -->
-    <div class="flex gap-4 border-b border-white/10 mb-6">
+    <div class="flex gap-4 border-b mb-6 overflow-x-auto">
       <button class="tab-btn active" onclick="switchTab('products')">📦 Товары</button>
       <button class="tab-btn" onclick="switchTab('orders')">
         📋 Заказы <span id="orderBadge" class="bg-red-500 text-white text-xs px-2 py-1 rounded-full ml-1">0</span>
@@ -157,42 +211,42 @@
 
     <!-- Вкладка: Товары -->
     <div id="productsTab">
-      <div class="flex justify-between items-center mb-6">
-        <h2 class="text-3xl font-bold">Каталог товаров</h2>
-        <button onclick="showAddForm()" class="btn-primary">
+      <div class="mb-6 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
+        <h2 class="text-2xl sm:text-3xl font-bold">Товары в каталоге</h2>
+        <button onclick="showAddForm()" class="btn-craft bg-green-500 text-white px-6 py-3 rounded-lg font-bold">
           ➕ Добавить товар
         </button>
       </div>
-      <div id="productsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      <div id="productsList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"></div>
     </div>
 
     <!-- Вкладка: Заказы -->
     <div id="ordersTab" class="hidden">
-      <h2 class="text-3xl font-bold mb-6">Заказы</h2>
+      <h2 class="text-2xl sm:text-3xl font-bold mb-6">Новые заказы</h2>
       <div id="ordersList"></div>
     </div>
 
     <!-- Вкладка: Статистика -->
     <div id="statsTab" class="hidden">
-      <h2 class="text-3xl font-bold mb-6">Статистика</h2>
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <div class="card bg-gradient-to-br from-blue-500 to-blue-600">
-          <div class="text-4xl mb-2">📋</div>
+      <h2 class="text-2xl sm:text-3xl font-bold mb-6">Статистика заказов</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div class="stat-card">
+          <div class="text-3xl mb-2">📋</div>
           <div class="text-sm opacity-80">Всего заказов</div>
           <div class="text-3xl font-bold" id="statTotal">0</div>
         </div>
-        <div class="card bg-gradient-to-br from-green-500 to-green-600">
-          <div class="text-4xl mb-2">✅</div>
+        <div class="stat-card" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%)">
+          <div class="text-3xl mb-2">✅</div>
           <div class="text-sm opacity-80">Выполнено</div>
           <div class="text-3xl font-bold" id="statCompleted">0</div>
         </div>
-        <div class="card bg-gradient-to-br from-red-500 to-red-600">
-          <div class="text-4xl mb-2">❌</div>
-          <div class="text-sm opacity-80">Отменено</div>
+        <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)">
+          <div class="text-3xl mb-2">❌</div>
+          <div class="text-sm opacity-80">Не забрали</div>
           <div class="text-3xl font-bold" id="statCancelled">0</div>
         </div>
-        <div class="card bg-gradient-to-br from-amber-500 to-orange-500">
-          <div class="text-4xl mb-2">💰</div>
+        <div class="stat-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%)">
+          <div class="text-3xl mb-2">💰</div>
           <div class="text-sm opacity-80">Выручка</div>
           <div class="text-3xl font-bold" id="statRevenue">0₽</div>
         </div>
@@ -203,52 +257,55 @@
 </div>
 
 <!-- Модалка товара -->
-<div id="productModal" class="modal">
-  <div class="modal-content p-6">
-    <h3 class="text-2xl font-bold mb-6" id="modalTitle">Добавить товар</h3>
+<div id="productModal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50 p-4">
+  <div class="bg-white rounded-2xl p-4 sm:p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto">
+    <h3 class="text-xl sm:text-2xl font-bold mb-4" id="modalTitle">Добавить товар</h3>
     
-    <div class="space-y-4">
-      <div>
-        <label class="block text-sm font-semibold mb-2">Изображение (URL)</label>
-        <input type="text" id="productImage" placeholder="https://..." class="input-field">
-      </div>
-
-      <div>
-        <label class="block text-sm font-semibold mb-2">Название</label>
-        <input type="text" id="productName" placeholder="IPA Classic" class="input-field">
-      </div>
-
-      <div>
-        <label class="block text-sm font-semibold mb-2">Описание</label>
-        <textarea id="productDesc" placeholder="0.5л • 6.5%" class="input-field" rows="2"></textarea>
-      </div>
-
-      <div>
-        <label class="block text-sm font-semibold mb-2">Категория</label>
-        <select id="productCategory" class="input-field">
-          <option value="Пиво">🍺 Пиво</option>
-          <option value="Крафтовое пиво">🍻 Крафтовое пиво</option>
-          <option value="Сидр">🍎 Сидр</option>
-          <option value="Закуски">🥨 Закуски</option>
-        </select>
-      </div>
-
-      <div>
-        <label class="block text-sm font-semibold mb-2">Цена (₽)</label>
-        <input type="number" id="productPrice" placeholder="350" class="input-field" min="0">
-      </div>
-
-      <div class="flex items-center gap-2">
-        <input type="checkbox" id="productIsNew" class="w-5 h-5">
-        <label for="productIsNew" class="font-semibold">Отметить как новинку</label>
+    <div class="mb-4">
+      <label class="block text-sm font-semibold mb-2">Изображение товара</label>
+      <div class="image-upload" id="imageUploadArea" onclick="document.getElementById('imageInput').click()">
+        <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
+        <div id="uploadPlaceholder">
+          <div class="text-4xl mb-2">📸</div>
+          <p class="text-slate-600 font-semibold">Нажмите для загрузки фото</p>
+          <p class="text-sm text-slate-400 mt-1">JPG, PNG, WEBP (макс. 5MB)</p>
+        </div>
+        <img id="imagePreview" class="image-preview hidden" alt="Preview">
       </div>
     </div>
 
-    <div class="flex gap-3 mt-6">
-      <button onclick="saveProduct()" class="flex-1 btn-primary">
+    <div class="input-with-label mb-4">
+      <input type="text" id="productName" placeholder=" ">
+      <label>Название товара</label>
+    </div>
+    
+    <div class="input-with-label mb-4">
+      <textarea id="productDesc" placeholder=" " rows="2"></textarea>
+      <label>Описание</label>
+    </div>
+
+    <div class="input-with-label mb-4">
+      <select id="productCategory">
+        <option value="">Выберите категорию</option>
+        <option value="Пиво">🍺 Пиво</option>
+        <option value="Крафтовое пиво">🍻 Крафтовое пиво</option>
+        <option value="Сидр">🍎 Сидр</option>
+        <option value="Закуски">🥨 Закуски</option>
+        <option value="Безалкогольное">🥤 Безалкогольное</option>
+      </select>
+      <label>Категория</label>
+    </div>
+    
+    <div class="input-with-label mb-4">
+      <input type="number" id="productPrice" placeholder=" " min="0" step="10">
+      <label>Цена (₽)</label>
+    </div>
+
+    <div class="flex gap-3">
+      <button onclick="saveProduct()" class="flex-1 bg-green-500 text-white py-3 rounded-lg font-bold hover:bg-green-600 transition">
         ✅ Сохранить
       </button>
-      <button onclick="closeModal()" class="flex-1 bg-slate-700 text-white py-3 rounded-lg font-bold hover:bg-slate-600 transition">
+      <button onclick="closeModal()" class="flex-1 bg-gray-300 py-3 rounded-lg font-bold hover:bg-gray-400 transition">
         Отмена
       </button>
     </div>
@@ -257,14 +314,17 @@
 
 <script>
 const ADMIN_PASSWORD = 'admin123';
+
 let products = [];
 let orders = [];
 let editingIndex = null;
+let currentImageData = null;
+let currentTab = 'products';
 
 function init() {
+  checkAuth();
   loadProducts();
   loadOrders();
-  checkAuth();
   updateOrderBadge();
 }
 
@@ -282,12 +342,28 @@ function checkAuth() {
   }
 }
 
+function showToast(message, type = 'success') {
+  const toast = document.createElement('div');
+  toast.className = `toast ${type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500'} text-white`;
+  const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+  toast.innerHTML = `<div class="flex items-center gap-3"><span class="text-2xl">${icon}</span><span class="font-semibold flex-1">${message}</span></div>`;
+  document.body.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add('removing');
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
 function checkPassword() {
   const password = document.getElementById('passwordInput').value;
   if (password === ADMIN_PASSWORD) {
     sessionStorage.setItem('adminAuth', 'true');
-    checkAuth();
-    showToast('Добро пожаловать!');
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('adminPanel').classList.remove('hidden');
+    renderProducts();
+    renderOrders();
+    renderStats();
+    showToast('Добро пожаловать в админку!');
   } else {
     showToast('Неверный пароль!', 'error');
   }
@@ -295,11 +371,14 @@ function checkPassword() {
 
 function logout() {
   sessionStorage.removeItem('adminAuth');
-  checkAuth();
+  document.getElementById('loginScreen').classList.remove('hidden');
+  document.getElementById('adminPanel').classList.add('hidden');
   document.getElementById('passwordInput').value = '';
+  showToast('Вы вышли из системы', 'info');
 }
 
 function switchTab(tab) {
+  currentTab = tab;
   document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
   event.target.classList.add('active');
   
@@ -313,7 +392,15 @@ function switchTab(tab) {
 
 function loadProducts() {
   const stored = localStorage.getItem('products');
-  products = stored ? JSON.parse(stored) : [];
+  if (stored) {
+    products = JSON.parse(stored);
+  } else {
+    products = [
+      { name: 'IPA Classic', desc: '0.5 л • 6.5%', category: 'Крафтовое пиво', image: 'https://i.pinimg.com/originals/db/35/9a/db359a8ae87f8a076305374c30765d85.jpg', price: 350 },
+      { name: 'Wheat Beer', desc: '0.5 л • 5.2%', category: 'Пиво', image: 'https://i.pinimg.com/originals/db/35/9a/db359a8ae87f8a076305374c30765d85.jpg', price: 320 }
+    ];
+    saveProducts();
+  }
 }
 
 function saveProducts() {
@@ -338,27 +425,23 @@ function updateOrderBadge() {
 function renderProducts() {
   const container = document.getElementById('productsList');
   if (products.length === 0) {
-    container.innerHTML = '<div class="col-span-full text-center py-12 text-slate-400"><p class="text-xl mb-4">📦 Товаров пока нет</p></div>';
+    container.innerHTML = `<div class="col-span-full text-center py-12 text-slate-500"><p class="text-xl mb-4">📦 Товаров пока нет</p><button onclick="showAddForm()" class="bg-amber-500 px-6 py-3 rounded-lg font-bold hover:bg-amber-600 transition">Добавить первый товар</button></div>`;
     return;
   }
-  
   container.innerHTML = products.map((product, index) => `
-    <div class="card">
-      <img src="${product.image}" class="w-full h-48 object-cover rounded-lg mb-4" onerror="this.src='https://via.placeholder.com/400x300?text=Beer'">
-      <div class="flex justify-between items-start mb-2">
-        <h3 class="font-bold text-lg">${product.name}</h3>
-        ${product.isNew ? '<span class="bg-green-500 text-white text-xs px-2 py-1 rounded">NEW</span>' : ''}
+    <div class="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition">
+      <div class="relative">
+        <img src="${product.image}" class="w-full h-40 sm:h-48 object-cover" onerror="this.src='https://via.placeholder.com/400x300?text=Нет+изображения'">
+        <span class="absolute top-2 right-2 bg-black/70 text-white px-3 py-1 rounded-full text-xs font-semibold">${product.category || 'Без категории'}</span>
       </div>
-      <p class="text-sm text-slate-400 mb-2">${product.desc}</p>
-      <p class="text-xs text-slate-500 mb-3">${product.category}</p>
-      <p class="text-2xl font-bold text-amber-400 mb-4">${product.price} ₽</p>
-      <div class="flex gap-2">
-        <button onclick="editProduct(${index})" class="flex-1 bg-blue-500 text-white py-2 rounded-lg font-semibold hover:bg-blue-600 transition text-sm">
-          ✏️ Изменить
-        </button>
-        <button onclick="deleteProduct(${index})" class="flex-1 bg-red-500 text-white py-2 rounded-lg font-semibold hover:bg-red-600 transition text-sm">
-          🗑️ Удалить
-        </button>
+      <div class="p-4">
+        <h3 class="font-bold text-base sm:text-lg mb-1">${product.name}</h3>
+        <p class="text-sm text-slate-600 mb-2">${product.desc}</p>
+        <p class="text-lg sm:text-xl font-bold text-amber-600 mb-4">${product.price} ₽</p>
+        <div class="flex gap-2">
+          <button onclick="editProduct(${index})" class="flex-1 bg-blue-500 text-white py-2 rounded-lg font-semibold hover:bg-blue-600 transition text-sm">✏️ Изменить</button>
+          <button onclick="deleteProduct(${index})" class="flex-1 bg-red-500 text-white py-2 rounded-lg font-semibold hover:bg-red-600 transition text-sm">🗑️ Удалить</button>
+        </div>
       </div>
     </div>
   `).join('');
@@ -369,39 +452,34 @@ function renderOrders() {
   const newOrders = orders.filter(o => o.status === 'new');
   
   if (newOrders.length === 0) {
-    container.innerHTML = '<div class="text-center py-12 text-slate-400"><p class="text-xl">📭 Новых заказов нет</p></div>';
+    container.innerHTML = `<div class="text-center py-12 text-slate-500"><p class="text-xl">📭 Новых заказов пока нет</p></div>`;
     return;
   }
   
-  container.innerHTML = newOrders.map(order => `
-    <div class="card mb-4">
+  container.innerHTML = newOrders.map((order, index) => `
+    <div class="bg-white rounded-2xl shadow-lg p-4 sm:p-6 mb-4">
       <div class="flex justify-between items-start mb-4">
         <div>
           <h3 class="font-bold text-lg">Заказ #${order.id}</h3>
-          <p class="text-sm text-slate-400">${order.date}</p>
+          <p class="text-sm text-slate-500">${order.date}</p>
         </div>
-        <span class="bg-amber-500 text-black px-3 py-1 rounded-full text-sm font-bold">Новый</span>
+        <span class="bg-amber-500 text-white px-3 py-1 rounded-full text-sm font-semibold">Новый</span>
       </div>
       
-      <div class="space-y-2 mb-4">
-        <p><strong>👤 Имя:</strong> ${order.name}</p>
+      <div class="mb-4 space-y-2">
+        <p><strong>👤 Имя:</strong> ${order.name || 'Не указано'}</p>
         <p><strong>📞 Телефон:</strong> ${order.phone}</p>
-        ${order.comment ? `<p><strong>💬 Комментарий:</strong> ${order.comment}</p>` : ''}
         <p><strong>💰 Сумма:</strong> ${order.total} ₽</p>
       </div>
       
-      <div class="border-t border-white/10 pt-3 mb-4">
+      <div class="border-t pt-3 mb-4">
         <p class="font-semibold mb-2">Товары:</p>
-        ${order.items.map(item => `<p class="text-sm text-slate-300">• ${item.name} x${item.count} = ${item.total}₽</p>`).join('')}
+        ${order.items.map(item => `<p class="text-sm">• ${item.name} x${item.count} = ${item.total}₽</p>`).join('')}
       </div>
       
       <div class="flex gap-2">
-        <button onclick="completeOrder(${orders.indexOf(order)})" class="flex-1 bg-green-500 text-white py-3 rounded-lg font-bold hover:bg-green-600 transition">
-          ✅ Выполнен
-        </button>
-        <button onclick="cancelOrder(${orders.indexOf(order)})" class="flex-1 bg-red-500 text-white py-3 rounded-lg font-bold hover:bg-red-600 transition">
-          ❌ Отменить
-        </button>
+        <button onclick="completeOrder(${orders.indexOf(order)})" class="flex-1 bg-green-500 text-white py-2 rounded-lg font-semibold hover:bg-green-600">✅ Выполнил</button>
+        <button onclick="cancelOrder(${orders.indexOf(order)})" class="flex-1 bg-red-500 text-white py-2 rounded-lg font-semibold hover:bg-red-600">❌ Не забрали</button>
       </div>
     </div>
   `).join('');
@@ -420,7 +498,7 @@ function cancelOrder(index) {
   saveOrders();
   renderOrders();
   renderStats();
-  showToast('Заказ отменён', 'error');
+  showToast('Заказ отменён', 'info');
 }
 
 function renderStats() {
@@ -437,68 +515,87 @@ function renderStats() {
   const history = orders.filter(o => o.status !== 'new');
   
   if (history.length === 0) {
-    container.innerHTML = '<div class="card text-center text-slate-400"><p>История заказов пуста</p></div>';
+    container.innerHTML = `<div class="text-center py-8 text-slate-500"><p>История заказов пуста</p></div>`;
     return;
   }
   
   container.innerHTML = `
     <h3 class="text-xl font-bold mb-4">История заказов</h3>
     ${history.map(order => `
-      <div class="card mb-3">
-        <div class="flex justify-between items-center">
-          <div>
-            <p class="font-semibold">Заказ #${order.id}</p>
-            <p class="text-sm text-slate-400">${order.date} • ${order.total}₽</p>
-          </div>
-          <span class="px-3 py-1 rounded-full text-sm font-bold ${order.status === 'completed' ? 'bg-green-500' : 'bg-red-500'}">
-            ${order.status === 'completed' ? '✅ Выполнен' : '❌ Отменён'}
-          </span>
+      <div class="bg-white rounded-xl p-4 mb-3 flex justify-between items-center">
+        <div>
+          <p class="font-semibold">Заказ #${order.id}</p>
+          <p class="text-sm text-slate-500">${order.date} • ${order.total}₽</p>
         </div>
+        <span class="px-3 py-1 rounded-full text-sm font-semibold ${order.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+          ${order.status === 'completed' ? '✅ Выполнен' : '❌ Отменён'}
+        </span>
       </div>
     `).join('')}
   `;
 }
 
+function handleImageUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) {
+    showToast('Файл слишком большой! Максимум 5MB', 'error');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    currentImageData = e.target.result;
+    document.getElementById('imagePreview').src = currentImageData;
+    document.getElementById('imagePreview').classList.remove('hidden');
+    document.getElementById('uploadPlaceholder').classList.add('hidden');
+    document.getElementById('imageUploadArea').classList.add('has-image');
+  };
+  reader.readAsDataURL(file);
+}
+
 function showAddForm() {
   editingIndex = null;
+  currentImageData = null;
   document.getElementById('modalTitle').textContent = 'Добавить товар';
   document.getElementById('productName').value = '';
   document.getElementById('productDesc').value = '';
-  document.getElementById('productImage').value = '';
-  document.getElementById('productCategory').value = 'Пиво';
+  document.getElementById('productCategory').value = '';
   document.getElementById('productPrice').value = '';
-  document.getElementById('productIsNew').checked = false;
-  document.getElementById('productModal').classList.add('active');
+  document.getElementById('imageInput').value = '';
+  document.getElementById('imagePreview').classList.add('hidden');
+  document.getElementById('uploadPlaceholder').classList.remove('hidden');
+  document.getElementById('imageUploadArea').classList.remove('has-image');
+  document.getElementById('productModal').classList.add('flex');
+  document.getElementById('productModal').classList.remove('hidden');
 }
 
 function editProduct(index) {
   editingIndex = index;
   const product = products[index];
+  currentImageData = product.image;
   document.getElementById('modalTitle').textContent = 'Редактировать товар';
   document.getElementById('productName').value = product.name;
   document.getElementById('productDesc').value = product.desc;
-  document.getElementById('productImage').value = product.image;
-  document.getElementById('productCategory').value = product.category;
+  document.getElementById('productCategory').value = product.category || '';
   document.getElementById('productPrice').value = product.price;
-  document.getElementById('productIsNew').checked = product.isNew || false;
-  document.getElementById('productModal').classList.add('active');
+  if (product.image) {
+    document.getElementById('imagePreview').src = product.image;
+    document.getElementById('imagePreview').classList.remove('hidden');
+    document.getElementById('uploadPlaceholder').classList.add('hidden');
+    document.getElementById('imageUploadArea').classList.add('has-image');
+  }
+  document.getElementById('productModal').classList.add('flex');
+  document.getElementById('productModal').classList.remove('hidden');
 }
 
 function saveProduct() {
   const name = document.getElementById('productName').value.trim();
   const desc = document.getElementById('productDesc').value.trim();
-  const image = document.getElementById('productImage').value.trim();
   const category = document.getElementById('productCategory').value;
-  const price = parseInt(document.getElementById('productPrice').value) || 0;
-  const isNew = document.getElementById('productIsNew').checked;
-  
-  if (!name || !image) {
-    showToast('Заполните все поля!', 'error');
-    return;
-  }
-  
-  const product = { name, desc, image, category, price, isNew };
-  
+  const price = document.getElementById('productPrice').value.trim();
+  if (!name) { showToast('Введите название товара!', 'error'); return; }
+  if (!currentImageData) { showToast('Загрузите изображение товара!', 'error'); return; }
+  const product = { name, desc: desc || 'Описание товара', category: category || 'Без категории', image: currentImageData, price: parseInt(price) || 0 };
   if (editingIndex !== null) {
     products[editingIndex] = product;
     showToast('Товар обновлён!');
@@ -506,14 +603,13 @@ function saveProduct() {
     products.push(product);
     showToast('Товар добавлен!');
   }
-  
   saveProducts();
   closeModal();
   renderProducts();
 }
 
 function deleteProduct(index) {
-  if (confirm('Удалить товар?')) {
+  if (confirm('❓ Удалить этот товар?')) {
     products.splice(index, 1);
     saveProducts();
     renderProducts();
@@ -522,31 +618,11 @@ function deleteProduct(index) {
 }
 
 function closeModal() {
-  document.getElementById('productModal').classList.remove('active');
-}
-
-function showToast(message, type = 'success') {
-  const toast = document.createElement('div');
-  toast.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: ${type === 'success' ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #ef4444, #dc2626)'};
-    color: white;
-    padding: 16px 24px;
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-    z-index: 9999;
-    font-weight: 600;
-  `;
-  toast.textContent = message;
-  document.body.appendChild(toast);
-  
-  setTimeout(() => toast.remove(), 3000);
+  document.getElementById('productModal').classList.add('hidden');
+  document.getElementById('productModal').classList.remove('flex');
 }
 
 init();
 </script>
-
 </body>
 </html>
