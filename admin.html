@@ -157,6 +157,21 @@
         max-width: none;
       }
     }
+    /* === MOBILE FIX: STOP HORIZONTAL DRIFT === */
+html, body {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+@media (max-width: 768px) {
+  .parallax-bg {
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    animation: none; /* убираем float ТОЛЬКО на мобилках */
+  }
+}
   </style>
 </head>
 <body class="bg-slate-50">
@@ -188,7 +203,7 @@
         <p class="text-xs sm:text-sm text-slate-400">Управление товарами и заказами</p>
       </div>
       <div class="flex gap-2 sm:gap-4 w-full sm:w-auto">
-        <a href="index.html" class="flex-1 sm:flex-none bg-amber-500 px-3 sm:px-4 py-2 rounded-lg font-semibold text-black hover:bg-amber-600 transition text-center text-sm sm:text-base">
+        <a href="index.html" target="_blank" class="flex-1 sm:flex-none bg-amber-500 px-3 sm:px-4 py-2 rounded-lg font-semibold text-black hover:bg-amber-600 transition text-center text-sm sm:text-base">
           На сайт
         </a>
         <button onclick="logout()" class="flex-1 sm:flex-none bg-red-500 px-3 sm:px-4 py-2 rounded-lg font-semibold hover:bg-red-600 transition text-sm sm:text-base">
@@ -322,9 +337,10 @@ let currentImageData = null;
 let currentTab = 'products';
 
 function init() {
-  checkAuth();
+  // ИСПРАВЛЕНО: Сначала загружаем данные, потом проверяем авторизацию
   loadProducts();
   loadOrders();
+  checkAuth();
   updateOrderBadge();
 }
 
