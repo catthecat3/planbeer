@@ -35,6 +35,21 @@
 
     .fade-up { opacity: 0; transform: translateY(40px); transition: all .8s cubic-bezier(.4,0,.2,1); }
     .fade-up.show { opacity: 1; transform: translateY(0); }
+    /* === MOBILE FIX: STOP HORIZONTAL DRIFT === */
+html, body {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+@media (max-width: 768px) {
+  .parallax-bg {
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    animation: none; /* убираем float ТОЛЬКО на мобилках */
+  }
+}
   </style>
 </head>
 <body class="font-body bg-slate-50 text-slate-900">
@@ -115,3 +130,4 @@
 
 </body>
 </html>
+
