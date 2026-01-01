@@ -324,8 +324,8 @@
     
     <!-- Табы -->
     <div class="flex gap-4 border-b mb-6 overflow-x-auto">
-      <button class="tab-btn" onclick="switchTab('products')">📦 Товары</button>
-      <button class="tab-btn active" onclick="switchTab('orders')">
+      <button class="tab-btn active" onclick="switchTab('products')">📦 Товары</button>
+      <button class="tab-btn" onclick="switchTab('orders')">
         📋 Заказы <span id="orderBadge" class="bg-red-500 text-white text-xs px-2 py-1 rounded-full ml-1 pulse-badge">0</span>
       </button>
       <button class="tab-btn" onclick="switchTab('categories')">🏷️ Категории</button>
@@ -333,7 +333,7 @@
     </div>
 
     <!-- Вкладка: Товары -->
-    <div id="productsTab" class="hidden">
+    <div id="productsTab">
       <div class="mb-6 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
         <h2 class="text-2xl sm:text-3xl font-bold">Товары в каталоге</h2>
         <button onclick="showAddForm()" class="btn-craft bg-green-500 text-white px-6 py-3 rounded-lg font-bold">
@@ -387,8 +387,6 @@
     <!-- Вкладка: Статистика -->
     <div id="statsTab" class="hidden">
       <h2 class="text-2xl sm:text-3xl font-bold mb-6">Статистика заказов</h2>
-      
-      <!-- Общая статистика -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div class="stat-card">
           <div class="text-3xl mb-2">📋</div>
@@ -411,18 +409,6 @@
           <div class="text-3xl font-bold" id="statRevenue">0₽</div>
         </div>
       </div>
-      
-      <!-- Фильтр по месяцам -->
-      <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-lg mb-6">
-        <div class="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 mb-4">
-          <h3 class="text-lg font-bold">📅 Статистика по месяцам</h3>
-          <select id="monthFilter" onchange="renderStats()" class="border-2 p-2 rounded-lg focus:border-amber-500 focus:outline-none text-sm sm:text-base">
-            <option value="all">Все месяцы</option>
-          </select>
-        </div>
-        <div id="monthlyStatsContainer"></div>
-      </div>
-      
       <div id="statsHistory"></div>
     </div>
   </div>
@@ -516,7 +502,7 @@ let orders = [];
 let categories = [];
 let editingIndex = null;
 let currentImageData = null;
-let currentTab = 'orders'; // ИЗМЕНЕНО: по умолчанию открываем Заказы
+let currentTab = 'products';
 let isFirstLoad = true; // ИСПРАВЛЕНИЕ: флаг первой загрузки
 
 function updateFirebaseStatus(connected) {
@@ -544,21 +530,6 @@ function checkAuth() {
   if (isAuth === 'true') {
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('adminPanel').classList.remove('hidden');
-    
-    // ИСПРАВЛЕНИЕ: Показываем заказы сразу после авторизации
-    if (currentTab === 'orders') {
-      // Ждем немного пока Firebase подгрузит данные
-      const checkAndRender = () => {
-        if (orders.length > 0) {
-          console.log('✅ Данные загружены, рендерим заказы');
-          renderOrders();
-        } else {
-          console.log('⏳ Ждем данные... orders.length =', orders.length);
-          setTimeout(checkAndRender, 100);
-        }
-      };
-      setTimeout(checkAndRender, 100);
-    }
   } else {
     document.getElementById('loginScreen').classList.remove('hidden');
     document.getElementById('adminPanel').classList.add('hidden');
@@ -971,14 +942,10 @@ function loadOrders() {
     
     updateOrderBadge();
     
-    // ИСПРАВЛЕНИЕ: Рендерим заказы при первой загрузке ИЛИ если на вкладке заказов
-    const shouldRender = currentTab === 'orders';
-    
-    if (shouldRender) {
-      console.log('🎨 Рендеринг заказов. Текущая вкладка:', currentTab);
+    // ИСПРАВЛЕНИЕ: Всегда рендерим если на вкладке заказов
+    if (currentTab === 'orders') {
       renderOrders();
     }
-    
     if (currentTab === 'stats') {
       renderStats();
     }
@@ -1174,165 +1141,27 @@ function renderStats() {
   document.getElementById('statCancelled').textContent = cancelled.length;
   document.getElementById('statRevenue').textContent = revenue + '₽';
   
-  const historyContainer = document.getElementById('statsHistory');
+  const container = document.getElementById('statsHistory');
   const history = orders.filter(o => o.status !== 'new');
   
-  // === Статистика по месяцам ===
-  const monthlyStats = {};
-  
-  orders.forEach(order => {
-    if (!order.date) return;
-    
-    const dateParts = order.date.split(',')[0].split('.');
-    if (dateParts.length !== 3) return;
-    
-    const month = dateParts[1];
-    const year = dateParts[2];
-    const monthKey = `${year}-${month}`;
-    
-    if (!monthlyStats[monthKey]) {
-      monthlyStats[monthKey] = {
-        total: 0,
-        completed: 0,
-        cancelled: 0,
-        revenue: 0,
-        orders: []
-      };
-    }
-    
-    monthlyStats[monthKey].total++;
-    monthlyStats[monthKey].orders.push(order);
-    
-    if (order.status === 'completed') {
-      monthlyStats[monthKey].completed++;
-      monthlyStats[monthKey].revenue += order.total || 0;
-    } else if (order.status === 'cancelled') {
-      monthlyStats[monthKey].cancelled++;
-    }
-  });
-  
-  // Сортируем по дате (новые сначала)
-  const sortedMonths = Object.keys(monthlyStats).sort((a, b) => {
-    const [yearA, monthA] = a.split('-').map(Number);
-    const [yearB, monthB] = b.split('-').map(Number);
-    if (yearA !== yearB) return yearB - yearA;
-    return monthB - monthA;
-  });
-  
-  const monthNames = {
-    '01': 'Январь', '02': 'Февраль', '03': 'Март', '04': 'Апрель',
-    '05': 'Май', '06': 'Июнь', '07': 'Июль', '08': 'Август',
-    '09': 'Сентябрь', '10': 'Октябрь', '11': 'Ноябрь', '12': 'Декабрь'
-  };
-  
-  // Обновляем фильтр месяцев
-  const filterSelect = document.getElementById('monthFilter');
-  const currentFilter = filterSelect.value;
-  
-  filterSelect.innerHTML = '<option value="all">Все месяцы</option>';
-  sortedMonths.forEach(monthKey => {
-    const [year, month] = monthKey.split('-');
-    const monthName = monthNames[month] || month;
-    const option = document.createElement('option');
-    option.value = monthKey;
-    option.textContent = `${monthName} ${year}`;
-    if (monthKey === currentFilter) option.selected = true;
-    filterSelect.appendChild(option);
-  });
-  
-  // Фильтруем месяцы
-  const selectedMonth = filterSelect.value;
-  const monthsToShow = selectedMonth === 'all' ? sortedMonths : [selectedMonth];
-  
-  const monthlyContainer = document.getElementById('monthlyStatsContainer');
-  
-  if (monthsToShow.length === 0 || !monthlyStats[monthsToShow[0]]) {
-    monthlyContainer.innerHTML = '<p class="text-center text-slate-500 py-8">Нет данных за выбранный период</p>';
-  } else {
-    monthlyContainer.innerHTML = `
-      <div class="grid grid-cols-1 gap-4">
-        ${monthsToShow.map(monthKey => {
-          const [year, month] = monthKey.split('-');
-          const stats = monthlyStats[monthKey];
-          const monthName = monthNames[month] || month;
-          
-          return `
-            <div class="bg-gradient-to-br from-purple-500 to-pink-500 text-white rounded-xl p-4 sm:p-6 shadow-lg">
-              <div class="flex justify-between items-center mb-4">
-                <h4 class="text-lg sm:text-xl font-bold">${monthName} ${year}</h4>
-                <span class="text-2xl">📊</span>
-              </div>
-              
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-                <div class="bg-white/20 rounded-lg p-3 backdrop-blur-sm">
-                  <div class="text-xs sm:text-sm opacity-90 mb-1">Всего</div>
-                  <div class="text-xl sm:text-2xl font-bold">${stats.total}</div>
-                </div>
-                <div class="bg-white/20 rounded-lg p-3 backdrop-blur-sm">
-                  <div class="text-xs sm:text-sm opacity-90 mb-1">Выполнено</div>
-                  <div class="text-xl sm:text-2xl font-bold">${stats.completed}</div>
-                </div>
-                <div class="bg-white/20 rounded-lg p-3 backdrop-blur-sm">
-                  <div class="text-xs sm:text-sm opacity-90 mb-1">Отменено</div>
-                  <div class="text-xl sm:text-2xl font-bold">${stats.cancelled}</div>
-                </div>
-                <div class="bg-white/20 rounded-lg p-3 backdrop-blur-sm">
-                  <div class="text-xs sm:text-sm opacity-90 mb-1">Выручка</div>
-                  <div class="text-lg sm:text-xl font-bold">${stats.revenue}₽</div>
-                </div>
-              </div>
-              
-              ${selectedMonth !== 'all' ? `
-                <div class="mt-4 pt-4 border-t border-white/30">
-                  <h5 class="font-semibold mb-2 text-sm sm:text-base">Заказы за этот месяц:</h5>
-                  <div class="space-y-2 max-h-60 overflow-y-auto">
-                    ${stats.orders.map(order => `
-                      <div class="bg-white/20 rounded-lg p-2 backdrop-blur-sm text-xs sm:text-sm">
-                        <div class="flex justify-between items-center">
-                          <span>Заказ #${order.id}</span>
-                          <span class="font-bold">${order.total}₽</span>
-                        </div>
-                        <div class="opacity-80 text-xs mt-1">${order.date} • ${order.name}</div>
-                      </div>
-                    `).join('')}
-                  </div>
-                </div>
-              ` : ''}
-            </div>
-          `;
-        }).join('')}
-      </div>
-      
-      ${selectedMonth === 'all' && sortedMonths.length > 1 ? `
-        <div class="mt-4 text-center">
-          <p class="text-sm text-slate-500">💡 Выберите месяц в фильтре выше, чтобы увидеть детальную информацию</p>
-        </div>
-      ` : ''}
-    `;
-  }
-  
-  // История заказов
   if (history.length === 0) {
-    historyContainer.innerHTML = `<div class="text-center py-8 text-slate-500"><p>История заказов пуста</p></div>`;
+    container.innerHTML = `<div class="text-center py-8 text-slate-500"><p>История заказов пуста</p></div>`;
     return;
   }
   
-  historyContainer.innerHTML = `
-    <h3 class="text-xl font-bold mb-4 mt-6">📋 Последние заказы</h3>
-    <div class="space-y-2">
-      ${history.slice(0, 10).map(order => `
-        <div class="bg-white rounded-xl p-3 sm:p-4 flex justify-between items-center shadow-sm hover:shadow-md transition">
-          <div class="flex-1 min-w-0">
-            <p class="font-semibold text-sm sm:text-base truncate">Заказ #${order.id}</p>
-            <p class="text-xs sm:text-sm text-slate-500">${order.date} • ${order.total}₽</p>
-          </div>
-          <span class="px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap ml-2 ${order.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
-            ${order.status === 'completed' ? '✅' : '❌'}
-          </span>
+  container.innerHTML = `
+    <h3 class="text-xl font-bold mb-4">История заказов</h3>
+    ${history.map(order => `
+      <div class="bg-white rounded-xl p-4 mb-3 flex justify-between items-center">
+        <div>
+          <p class="font-semibold">Заказ #${order.id}</p>
+          <p class="text-sm text-slate-500">${order.date} • ${order.total}₽</p>
         </div>
-      `).join('')}
-    </div>
-    ${history.length > 10 ? `<p class="text-center text-sm text-slate-400 mt-4">Показано 10 из ${history.length} заказов</p>` : ''}
+        <span class="px-3 py-1 rounded-full text-sm font-semibold ${order.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+          ${order.status === 'completed' ? '✅ Выполнен' : '❌ Отменён'}
+        </span>
+      </div>
+    `).join('')}
   `;
 }
 
