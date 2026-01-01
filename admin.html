@@ -537,13 +537,6 @@ function init() {
     loadProducts();
     loadOrders();
   }
-  
-  // ИСПРАВЛЕНИЕ: Рендерим заказы сразу после загрузки
-  setTimeout(() => {
-    if (currentTab === 'orders') {
-      renderOrders();
-    }
-  }, 500);
 }
 
 function checkAuth() {
@@ -551,6 +544,21 @@ function checkAuth() {
   if (isAuth === 'true') {
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('adminPanel').classList.remove('hidden');
+    
+    // ИСПРАВЛЕНИЕ: Показываем заказы сразу после авторизации
+    if (currentTab === 'orders') {
+      // Ждем немного пока Firebase подгрузит данные
+      const checkAndRender = () => {
+        if (orders.length > 0) {
+          console.log('✅ Данные загружены, рендерим заказы');
+          renderOrders();
+        } else {
+          console.log('⏳ Ждем данные... orders.length =', orders.length);
+          setTimeout(checkAndRender, 100);
+        }
+      };
+      setTimeout(checkAndRender, 100);
+    }
   } else {
     document.getElementById('loginScreen').classList.remove('hidden');
     document.getElementById('adminPanel').classList.add('hidden');
@@ -963,10 +971,14 @@ function loadOrders() {
     
     updateOrderBadge();
     
-    // ИСПРАВЛЕНИЕ: Всегда рендерим если на вкладке заказов
-    if (currentTab === 'orders') {
+    // ИСПРАВЛЕНИЕ: Рендерим заказы при первой загрузке ИЛИ если на вкладке заказов
+    const shouldRender = currentTab === 'orders';
+    
+    if (shouldRender) {
+      console.log('🎨 Рендеринг заказов. Текущая вкладка:', currentTab);
       renderOrders();
     }
+    
     if (currentTab === 'stats') {
       renderStats();
     }
