@@ -583,11 +583,6 @@ function checkPassword() {
     sessionStorage.setItem('adminAuth', 'true');
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('adminPanel').classList.remove('hidden');
-    if (isFirebaseInitialized) {
-      loadCategories();
-      loadProducts();
-      loadOrders();
-    }
     showToast('Добро пожаловать в админку!');
   } else {
     showToast('Неверный пароль!', 'error');
@@ -612,6 +607,7 @@ function switchTab(tab) {
   document.getElementById('categoriesTab').classList.toggle('hidden', tab !== 'categories');
   document.getElementById('statsTab').classList.toggle('hidden', tab !== 'stats');
   
+  if (tab === 'orders') renderOrders();
   if (tab === 'categories') renderCategoriesList();
   if (tab === 'stats') renderStats();
 }
@@ -945,8 +941,14 @@ function loadOrders() {
     isFirstLoad = false;
     
     updateOrderBadge();
-    if (currentTab === 'orders') renderOrders();
-    if (currentTab === 'stats') renderStats();
+    
+    // ИСПРАВЛЕНИЕ: Всегда рендерим если на вкладке заказов
+    if (currentTab === 'orders') {
+      renderOrders();
+    }
+    if (currentTab === 'stats') {
+      renderStats();
+    }
   }, (error) => {
     console.error('❌ Ошибка загрузки заказов:', error);
     showToast('Ошибка загрузки заказов: ' + error.message, 'error');
