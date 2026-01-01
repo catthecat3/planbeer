@@ -905,33 +905,32 @@ function loadOrders() {
     console.log('📦 Данные заказов из Firebase:', data);
     
     if (data) {
-      // Проверяем структуру данных
-      if (Array.isArray(data)) {
-        // Если массив
-        orders = data.map((order, index) => ({
-          ...order,
-          firebaseKey: index.toString()
-        }));
-      } else {
-        // Если объект
-        Object.entries(data).forEach(([key, value]) => {
-          if (value && typeof value === 'object') {
-            orders.push({ 
-              ...value, 
-              firebaseKey: key,
-              // Убеждаемся что все поля есть
-              id: value.id || key,
-              status: value.status || 'new',
-              items: value.items || []
-            });
+      Object.entries(data).forEach(([key, value]) => {
+        if (value && typeof value === 'object') {
+          // ИСПРАВЛЕНИЕ: преобразуем items из объекта в массив если нужно
+          let items = value.items;
+          if (items && !Array.isArray(items)) {
+            items = Object.values(items);
           }
-        });
-      }
+          
+          orders.push({ 
+            ...value, 
+            firebaseKey: key,
+            id: value.id || key,
+            status: value.status || 'new',
+            items: items || [],
+            name: value.name || '',
+            phone: value.phone || '',
+            total: value.total || 0,
+            date: value.date || ''
+          });
+        }
+      });
     }
     
     console.log(`✅ Обработано заказов: ${orders.length}`, orders);
     
-    // ИСПРАВЛЕНИЕ: Показываем уведомление только для НОВЫХ заказов
+    // Показываем уведомление только для НОВЫХ заказов
     if (!isFirstLoad) {
       const newOrders = orders.filter(order => {
         return order.status === 'new' && 
