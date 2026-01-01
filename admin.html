@@ -345,7 +345,17 @@
 
     <!-- Вкладка: Заказы -->
     <div id="ordersTab" class="hidden">
-      <h2 class="text-2xl sm:text-3xl font-bold mb-6">Новые заказы</h2>
+      <div class="mb-6 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
+        <h2 class="text-2xl sm:text-3xl font-bold">Новые заказы</h2>
+        <div class="flex gap-2">
+          <button onclick="debugOrders()" class="bg-blue-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-600">
+            🔍 Диагностика
+          </button>
+          <button onclick="cleanupOrders()" class="bg-orange-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-orange-600">
+            🧹 Очистить пустые
+          </button>
+        </div>
+      </div>
       <div id="ordersList"></div>
     </div>
 
@@ -892,11 +902,34 @@ function loadOrders() {
     const previousOrders = [...orders];
     orders = [];
     
+    console.log('📦 Данные заказов из Firebase:', data);
+    
     if (data) {
-      Object.entries(data).forEach(([key, value]) => {
-        orders.push({ ...value, firebaseKey: key });
-      });
+      // Проверяем структуру данных
+      if (Array.isArray(data)) {
+        // Если массив
+        orders = data.map((order, index) => ({
+          ...order,
+          firebaseKey: index.toString()
+        }));
+      } else {
+        // Если объект
+        Object.entries(data).forEach(([key, value]) => {
+          if (value && typeof value === 'object') {
+            orders.push({ 
+              ...value, 
+              firebaseKey: key,
+              // Убеждаемся что все поля есть
+              id: value.id || key,
+              status: value.status || 'new',
+              items: value.items || []
+            });
+          }
+        });
+      }
     }
+    
+    console.log(`✅ Обработано заказов: ${orders.length}`, orders);
     
     // ИСПРАВЛЕНИЕ: Показываем уведомление только для НОВЫХ заказов
     if (!isFirstLoad) {
@@ -910,15 +943,14 @@ function loadOrders() {
       });
     }
     
-    isFirstLoad = false; // После первой загрузки отключаем флаг
+    isFirstLoad = false;
     
     updateOrderBadge();
     if (currentTab === 'orders') renderOrders();
     if (currentTab === 'stats') renderStats();
-    
-    console.log(`✅ Загружено заказов: ${orders.length}`);
   }, (error) => {
-    console.error('Ошибка загрузки заказов:', error);
+    console.error('❌ Ошибка загрузки заказов:', error);
+    showToast('Ошибка загрузки заказов: ' + error.message, 'error');
   });
 }
 
@@ -995,6 +1027,104 @@ async function cancelOrder(firebaseKey) {
   } catch (error) {
     console.error('Ошибка обновления заказа:', error);
     showToast('Ошибка обновления заказа', 'error');
+  }
+}
+
+// Диагностика заказов
+async function debugOrders() {
+  if (!isFirebaseInitialized || !db) {
+    alert('Firebase не подключен!');
+    return;
+  }
+  
+  try {
+    const snapshot = await db.ref('orders').once('value');
+    const data = snapshot.val();
+    
+    console.log('🔍 === ДИАГНОСТИКА ЗАКАЗОВ ===');
+    console.log('📦 Raw data:', data);
+    console.log('📊 Orders array:', orders);
+    console.log('📈 Orders length:', orders.length);
+    
+    if (!data) {
+      alert('❌ В Firebase нет заказов!');
+      return;
+    }
+    
+    let validOrders = 0;
+    let emptyOrders = 0;
+    let report = '🔍 ОТЧЕТ О ЗАКАЗАХ:\n\n';
+    
+    Object.entries(data).forEach(([key, value]) => {
+      if (value && value.id && value.name && value.phone) {
+        validOrders++;
+        report += `✅ Заказ #${value.id} - ${value.name} - ${value.status || 'new'}\n`;
+      } else {
+        emptyOrders++;
+        report += `❌ ПУСТОЙ заказ с ключом: ${key}\n`;
+        console.log(`❌ Пустой заказ:`, key, value);
+      }
+    });
+    
+    report += `\n📊 Итого:\n`;
+    report += `✅ Валидных: ${validOrders}\n`;
+    report += `❌ Пустых: ${emptyOrders}\n`;
+    
+    console.log(report);
+    alert(report);
+  } catch (error) {
+    console.error('Ошибка диагностики:', error);
+    alert('Ошибка: ' + error.message);
+  }
+}
+
+// Очистка пустых заказов
+async function cleanupOrders() {
+  if (!isFirebaseInitialized || !db) {
+    alert('Firebase не подключен!');
+    return;
+  }
+  
+  if (!confirm('🧹 Удалить все пустые/битые заказы?\n\nЭто действие нельзя отменить!')) {
+    return;
+  }
+  
+  try {
+    const snapshot = await db.ref('orders').once('value');
+    const data = snapshot.val();
+    
+    if (!data) {
+      alert('Заказов нет');
+      return;
+    }
+    
+    let deleted = 0;
+    const updates = {};
+    
+    Object.entries(data).forEach(([key, value]) => {
+      // Если заказ пустой или не имеет обязательных полей
+      if (!value || !value.id || !value.name || !value.phone) {
+        updates[`orders/${key}`] = null; // Удаляем
+        deleted++;
+        console.log(`🗑️ Удаляем пустой заказ:`, key);
+      }
+    });
+    
+    if (deleted === 0) {
+      alert('✅ Все заказы валидны, ничего не удалено');
+      return;
+    }
+    
+    await db.ref().update(updates);
+    
+    showToast(`Удалено ${deleted} пустых заказов`, 'success');
+    alert(`✅ Очистка завершена!\n\nУдалено: ${deleted} пустых заказов`);
+    
+    // Перезагружаем заказы
+    loadOrders();
+  } catch (error) {
+    console.error('Ошибка очистки:', error);
+    alert('❌ Ошибка: ' + error.message);
   }
 }
 
