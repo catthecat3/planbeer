@@ -46,6 +46,19 @@
       height: 100%;
     }
     
+    /* ИСПРАВЛЕНИЕ для Telegram WebApp */
+    body.tg-mode.modal-open {
+      position: fixed;
+      width: 100%;
+      height: 100vh;
+      height: var(--tg-viewport-height, 100vh);
+    }
+    
+    body.tg-mode .cart-modal-content {
+      max-height: 70vh;
+      max-height: var(--tg-viewport-stable-height, 70vh);
+    }
+    
     .btn-craft {
       position: relative;
       overflow: hidden;
@@ -242,6 +255,8 @@
     body.tg-mode .cart-modal-content {
       background: var(--tg-theme-bg-color, white);
       color: var(--tg-theme-text-color, #1e293b);
+      max-height: 65vh;
+      padding-bottom: 20px;
     }
     
     @media (min-width: 768px) {
@@ -249,6 +264,10 @@
         border-radius: 24px;
         max-width: 480px;
         max-height: 90vh;
+      }
+      
+      body.tg-mode .cart-modal-content {
+        max-height: 80vh;
       }
     }
     
@@ -447,12 +466,37 @@ function initTelegramWebApp() {
     tg = window.Telegram.WebApp;
     isTelegramWebApp = true;
     document.body.classList.add('tg-mode');
-    tg.expand();
     
-    if (tg.themeParams) {
-      document.body.style.backgroundColor = tg.themeParams.bg_color || '#f1f5f9';
+    // ИСПРАВЛЕНИЕ: Правильная настройка для Telegram
+    tg.ready();
+    tg.expand();
+    tg.enableClosingConfirmation();
+    
+    // Устанавливаем цвет header
+    if (tg.setHeaderColor) {
+      tg.setHeaderColor(tg.themeParams.secondary_bg_color || '#ffffff');
     }
     
+    // Применяем тему
+    if (tg.themeParams) {
+      document.body.style.backgroundColor = tg.themeParams.bg_color || '#f1f5f9';
+      
+      // Устанавливаем CSS переменные для viewport
+      document.documentElement.style.setProperty('--tg-viewport-height', tg.viewportHeight + 'px');
+      document.documentElement.style.setProperty('--tg-viewport-stable-height', tg.viewportStableHeight + 'px');
+    }
+    
+    // Обновляем viewport при изменениях
+    tg.onEvent('viewportChanged', () => {
+      if (tg.viewportHeight) {
+        document.documentElement.style.setProperty('--tg-viewport-height', tg.viewportHeight + 'px');
+      }
+      if (tg.viewportStableHeight) {
+        document.documentElement.style.setProperty('--tg-viewport-stable-height', tg.viewportStableHeight + 'px');
+      }
+    });
+    
+    // Получаем данные пользователя
     if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
       const user = tg.initDataUnsafe.user;
       const userName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
@@ -465,6 +509,8 @@ function initTelegramWebApp() {
     }
     
     console.log('✅ Telegram WebApp initialized');
+    console.log('Viewport height:', tg.viewportHeight);
+    console.log('Stable height:', tg.viewportStableHeight);
   }
 }
 
@@ -672,12 +718,29 @@ function toggleCart() {
     document.body.classList.add("modal-open");
     if (isTelegramWebApp && tg) {
       tg.HapticFeedback.impactOccurred('medium');
+      
+      // ИСПРАВЛЕНИЕ: Скрываем кнопку корзины в Telegram
+      const fixedBtn = document.querySelector('.fixed-cart-btn');
+      if (fixedBtn) fixedBtn.style.display = 'none';
     }
   } else {
     document.body.classList.remove("modal-open");
+    if (isTelegramWebApp && tg) {
+      // Показываем кнопку обратно
+      const fixedBtn = document.querySelector('.fixed-cart-btn');
+      if (fixedBtn) fixedBtn.style.display = 'block';
+    }
   }
   
   renderCart();
+  
+  // ИСПРАВЛЕНИЕ: Прокручиваем модалку наверх в Telegram
+  if (!isHidden && isTelegramWebApp) {
+    setTimeout(() => {
+      const modalContent = document.querySelector('.cart-modal-content');
+      if (modalContent) modalContent.scrollTop = 0;
+    }, 100);
+  }
 }
 
 function renderCart() {
