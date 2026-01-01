@@ -324,8 +324,8 @@
     
     <!-- Табы -->
     <div class="flex gap-4 border-b mb-6 overflow-x-auto">
-      <button class="tab-btn active" onclick="switchTab('products')">📦 Товары</button>
-      <button class="tab-btn" onclick="switchTab('orders')">
+      <button class="tab-btn" onclick="switchTab('products')">📦 Товары</button>
+      <button class="tab-btn active" onclick="switchTab('orders')">
         📋 Заказы <span id="orderBadge" class="bg-red-500 text-white text-xs px-2 py-1 rounded-full ml-1 pulse-badge">0</span>
       </button>
       <button class="tab-btn" onclick="switchTab('categories')">🏷️ Категории</button>
@@ -333,7 +333,7 @@
     </div>
 
     <!-- Вкладка: Товары -->
-    <div id="productsTab">
+    <div id="productsTab" class="hidden">
       <div class="mb-6 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
         <h2 class="text-2xl sm:text-3xl font-bold">Товары в каталоге</h2>
         <button onclick="showAddForm()" class="btn-craft bg-green-500 text-white px-6 py-3 rounded-lg font-bold">
@@ -502,7 +502,7 @@ let orders = [];
 let categories = [];
 let editingIndex = null;
 let currentImageData = null;
-let currentTab = 'products';
+let currentTab = 'orders'; // ИЗМЕНЕНО: по умолчанию открываем Заказы
 let isFirstLoad = true; // ИСПРАВЛЕНИЕ: флаг первой загрузки
 
 function updateFirebaseStatus(connected) {
@@ -1149,8 +1149,82 @@ function renderStats() {
     return;
   }
   
+  // === НОВАЯ ФУНКЦИЯ: Статистика по месяцам ===
+  const monthlyStats = {};
+  
+  orders.forEach(order => {
+    if (!order.date) return;
+    
+    // Парсим дату (формат: "01.01.2026, 23:30:07")
+    const dateParts = order.date.split(',')[0].split('.');
+    if (dateParts.length !== 3) return;
+    
+    const month = dateParts[1]; // Месяц
+    const year = dateParts[2];  // Год
+    const monthKey = `${year}-${month}`;
+    
+    if (!monthlyStats[monthKey]) {
+      monthlyStats[monthKey] = {
+        total: 0,
+        completed: 0,
+        cancelled: 0,
+        revenue: 0,
+        orders: []
+      };
+    }
+    
+    monthlyStats[monthKey].total++;
+    monthlyStats[monthKey].orders.push(order);
+    
+    if (order.status === 'completed') {
+      monthlyStats[monthKey].completed++;
+      monthlyStats[monthKey].revenue += order.total || 0;
+    } else if (order.status === 'cancelled') {
+      monthlyStats[monthKey].cancelled++;
+    }
+  });
+  
+  // Сортируем по дате (новые сначала)
+  const sortedMonths = Object.keys(monthlyStats).sort((a, b) => {
+    const [yearA, monthA] = a.split('-').map(Number);
+    const [yearB, monthB] = b.split('-').map(Number);
+    if (yearA !== yearB) return yearB - yearA;
+    return monthB - monthA;
+  });
+  
+  const monthNames = {
+    '01': 'Январь', '02': 'Февраль', '03': 'Март', '04': 'Апрель',
+    '05': 'Май', '06': 'Июнь', '07': 'Июль', '08': 'Август',
+    '09': 'Сентябрь', '10': 'Октябрь', '11': 'Ноябрь', '12': 'Декабрь'
+  };
+  
   container.innerHTML = `
-    <h3 class="text-xl font-bold mb-4">История заказов</h3>
+    <!-- Статистика по месяцам -->
+    <div class="mb-8">
+      <h3 class="text-xl font-bold mb-4">📅 Статистика по месяцам</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        ${sortedMonths.map(monthKey => {
+          const [year, month] = monthKey.split('-');
+          const stats = monthlyStats[monthKey];
+          const monthName = monthNames[month] || month;
+          
+          return `
+            <div class="bg-gradient-to-br from-purple-500 to-pink-500 text-white rounded-xl p-4 shadow-lg">
+              <div class="text-lg font-bold mb-2">${monthName} ${year}</div>
+              <div class="space-y-1 text-sm">
+                <p>📋 Всего заказов: <strong>${stats.total}</strong></p>
+                <p>✅ Выполнено: <strong>${stats.completed}</strong></p>
+                <p>❌ Не забрали: <strong>${stats.cancelled}</strong></p>
+                <p>💰 Выручка: <strong>${stats.revenue}₽</strong></p>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+    
+    <!-- История заказов -->
+    <h3 class="text-xl font-bold mb-4">📋 История заказов</h3>
     ${history.map(order => `
       <div class="bg-white rounded-xl p-4 mb-3 flex justify-between items-center">
         <div>
