@@ -755,20 +755,29 @@ async function createOrder() {
     id: orderId,
     name: name,
     phone: phone,
-    items: Object.keys(grouped).map(name => ({ name, count: grouped[name].count, total: grouped[name].total })),
+    items: Object.keys(grouped).map(name => ({ 
+      name, 
+      count: grouped[name].count, 
+      total: grouped[name].total 
+    })),
     total: total,
     status: 'new',
     date: new Date().toLocaleString('ru-RU')
   };
   
+  console.log('📦 Создаём заказ:', order);
+  
   // Сохраняем заказ в Firebase
   if (isFirebaseInitialized && db) {
     try {
-      await db.ref('orders').push(order);
-      console.log('✅ Заказ сохранен в Firebase');
+      const orderRef = await db.ref('orders').push(order);
+      console.log('✅ Заказ сохранен в Firebase с ключом:', orderRef.key);
     } catch (error) {
-      console.error('❌ Ошибка сохранения заказа:', error);
+      console.error('❌ Ошибка сохранения заказа в Firebase:', error);
+      showToast('Ошибка сохранения заказа', 'error');
     }
+  } else {
+    console.warn('⚠️ Firebase не инициализирован, заказ не сохранен');
   }
   
   // Отправляем уведомление в Telegram
