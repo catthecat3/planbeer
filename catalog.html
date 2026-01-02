@@ -339,7 +339,10 @@
 
 <header>
   <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-    <div class="font-heading text-lg font-bold">🍺 PLAN BEER</div>
+    <div class="flex items-center gap-3">
+      <a href="index.html" class="text-2xl hover:scale-110 transition">←</a>
+      <div class="font-heading text-lg font-bold">🍺 PLAN BEER</div>
+    </div>
     <button onclick="toggleCart()" class="font-semibold text-amber-600 transition text-sm hidden md:block">
       🛒 Корзина (<span id="cartCount">0</span>)
     </button>
@@ -897,4 +900,5 @@ loadProducts();
 </script>
 </body>
 </html>
+
 
