@@ -453,10 +453,36 @@
               class="w-full p-3 rounded-xl mb-1 focus:border-amber-500 focus:outline-none transition text-base" maxlength="16" autocomplete="off">
             <div id="phoneError" class="text-red-500 text-xs mb-3 hidden">Пожалуйста, введите полный номер телефона</div>
     
-    <button onclick="createOrder()" 
-            class="btn-craft w-full bg-amber-500 text-white py-4 rounded-xl font-bold text-base shadow-lg">
-      Оформить заказ
-    </button>
+    <div id="orderBtnWrap">
+      <button onclick="createOrder()" 
+              id="orderBtn"
+              class="btn-craft w-full bg-amber-500 text-white py-4 rounded-xl font-bold text-base shadow-lg">
+        Оформить заказ
+      </button>
+    </div>
+    <script>
+    // Фиксируем кнопку внизу в tg-mode
+    function fixOrderBtn() {
+      const wrap = document.getElementById('orderBtnWrap');
+      if (!wrap) return;
+      if (document.body.classList.contains('tg-mode')) {
+        wrap.style.position = 'fixed';
+        wrap.style.left = '0';
+        wrap.style.right = '0';
+        wrap.style.bottom = '0';
+        wrap.style.zIndex = '10000';
+        wrap.style.background = '#fff';
+        wrap.style.padding = '16px 16px calc(env(safe-area-inset-bottom, 16px) + 4px) 16px';
+        wrap.style.boxShadow = '0 -4px 20px rgba(0,0,0,0.08)';
+        document.querySelector('.cart-modal-content').style.paddingBottom = '120px';
+      } else {
+        wrap.style = '';
+        document.querySelector('.cart-modal-content').style.paddingBottom = '';
+      }
+    }
+    document.addEventListener('DOMContentLoaded', fixOrderBtn);
+    window.addEventListener('resize', fixOrderBtn);
+    </script>
   </div>
 </div>
 
@@ -470,6 +496,23 @@
     <button onclick="closeSuccessModal()" class="btn-craft bg-amber-500 text-white px-8 py-3 rounded-xl font-bold hover:bg-amber-600 transition w-full mb-3">
       Отлично!
     </button>
+    <button onclick="startNewOrder()" class="btn-craft bg-white text-amber-600 border border-amber-500 px-8 py-3 rounded-xl font-bold hover:bg-amber-50 transition w-full mb-2">
+      Новый заказ
+    </button>
+    <script>
+    // Новый заказ: закрыть модалку, открыть корзину
+    function startNewOrder() {
+      closeSuccessModal();
+      setTimeout(() => {
+        toggleCart();
+      }, 200);
+    }
+    // После заказа всегда показываем кнопку корзины (на всякий случай)
+    function showCartBtn() {
+      const fixedBtn = document.querySelector('.fixed-cart-btn');
+      if (fixedBtn) fixedBtn.style.display = 'block';
+    }
+    </script>
     <a id="tgLink" href="https://t.me/patikoroley" target="_blank" rel="noopener noreferrer" class="block text-sm text-amber-600 hover:text-amber-700 font-semibold">
       📱 Написать продавцу
     </a>
@@ -1045,11 +1088,10 @@ async function createOrder() {
   document.getElementById("cart").classList.add("hidden");
   document.getElementById('successModal').classList.remove('hidden');
   document.body.classList.add("modal-open");
-  
+  showCartBtn();
   if (isTelegramWebApp && tg) {
     tg.HapticFeedback.notificationOccurred('success');
   }
-  
   cart = [];
   updateCount();
 }
