@@ -989,12 +989,16 @@ async function createOrder() {
     id: orderId,
     name: name,
     phone: phone,
-    items: Object.keys(grouped).map(name => ({ 
-      name, 
-      count: grouped[name].count, 
-      total: grouped[name].total,
-      liter: grouped[name].liter
-    })),
+    items: Object.keys(grouped).map(name => {
+      const item = grouped[name];
+      const base = {
+        name,
+        count: item.count,
+        total: item.total
+      };
+      if (typeof item.liter !== 'undefined') base.liter = item.liter;
+      return base;
+    }),
     total: total,
     status: 'new',
     date: new Date().toLocaleString('ru-RU')
