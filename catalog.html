@@ -504,8 +504,8 @@
       const cartModalContent = document.querySelector('.cart-modal-content');
       function raiseCartModal(up) {
         if (!cartModalContent) return;
-        if (up) {
-          cartModalContent.style.paddingBottom = '60vh'; // поднимаем окно ещё выше
+        if (up && isTelegramWebApp) {
+          cartModalContent.style.paddingBottom = '70vh'; // только в tg-mode
         } else {
           cartModalContent.style.paddingBottom = '';
         }
@@ -513,26 +513,27 @@
       // Автопрокрутка к активному input/textarea
       function scrollInputIntoView(target) {
         if (!cartModalContent || !target) return;
-        // Только если поле внутри корзины
+        if (!isTelegramWebApp) return; // только для tg-mode
         if (cartModalContent.contains(target)) {
           setTimeout(() => {
-            if (target.id === 'phone') {
-              // Для поля телефона — строго к нижней части окна, чтобы было над кнопкой
-              target.scrollIntoView({
-                behavior: 'smooth',
-                block: 'end',
-                inline: 'nearest'
-              });
-            } else {
-              // Для остальных — по центру
-              target.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center',
-                inline: 'nearest'
-              });
-            }
-          }, 200); // чуть позже, чтобы клавиатура успела открыться
+            target.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center',
+              inline: 'nearest'
+            });
+          }, 250); // чуть позже, чтобы клавиатура успела открыться
         }
+      }
+      // Автофокус на телефон после имени (и в tg-mode, и в браузере)
+      const nameInput = document.getElementById('customerName');
+      const phoneInput = document.getElementById('phone');
+      if (nameInput && phoneInput) {
+        nameInput.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' || e.key === 'Next') {
+            e.preventDefault();
+            phoneInput.focus();
+          }
+        });
       }
       if (cart) {
         cart.addEventListener('focusin', (e) => {
