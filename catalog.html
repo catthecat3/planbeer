@@ -279,9 +279,19 @@
     
     body.tg-mode input,
     body.tg-mode select {
-      background: var(--tg-theme-secondary-bg-color, white);
-      color: var(--tg-theme-text-color, #1e293b);
-      border-color: var(--tg-theme-hint-color, #e2e8f0);
+      background: #fff !important;
+      color: #1e293b !important;
+      border: 2px solid #e2e8f0 !important;
+      caret-color: #f59e0b !important;
+      box-shadow: none !important;
+      padding: 12px 16px !important;
+      font-size: 16px !important;
+    }
+    body.tg-mode input:focus,
+    body.tg-mode select:focus {
+      border-color: #f59e0b !important;
+      outline: none !important;
+      box-shadow: 0 0 0 2px #f59e0b22 !important;
     }
     
     .cart-item {
@@ -333,6 +343,46 @@
       0%, 100% { opacity: 1; }
       50% { opacity: 0.7; }
     }
+    
+    /* --- Фикс светлой темы и читаемости для Telegram WebApp --- */
+    body.tg-mode,
+    body.tg-mode .cart-modal-content,
+    body.tg-mode .product-card,
+    body.tg-mode .success-content,
+    body.tg-mode header,
+    body.tg-mode .category-btn,
+    body.tg-mode input,
+    body.tg-mode select,
+    body.tg-mode .fixed-cart-btn {
+      background: #fff !important;
+      color: #1e293b !important;
+      border-color: #e2e8f0 !important;
+      box-shadow: none;
+    }
+    body.tg-mode input,
+    body.tg-mode select {
+      caret-color: #f59e0b !important;
+    }
+    body.tg-mode .cart-item {
+      border-color: #e2e8f0 !important;
+    }
+    body.tg-mode .cart-modal-content {
+      max-height: 70vh;
+      max-height: var(--tg-viewport-stable-height, 70vh);
+      border-radius: 24px 24px 0 0;
+      box-shadow: 0 -10px 40px rgba(0,0,0,0.2);
+      padding-bottom: env(safe-area-inset-bottom, 16px);
+    }
+    @media (max-width: 600px) {
+      body.tg-mode .cart-modal-content {
+        position: fixed;
+        left: 0; right: 0; bottom: 0; top: auto;
+        width: 100vw;
+        min-height: 40vh;
+        z-index: 9999;
+      }
+    }
+    /* --- Конец фикса --- */
   </style>
 </head>
 <body>
@@ -608,14 +658,9 @@ async function sendTelegramNotification(order) {
   message += `\n💰 <b>Итого:</b> ${order.total}₽\n`;
   message += `\n🕐 <b>Время:</b> ${order.date}`;
   
-  if (isTelegramWebApp && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+  if (isTelegramWebApp && tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
     const user = tg.initDataUnsafe.user;
-    message += `\n\n👨‍💼 <b>Telegram:</b> `;
-    if (user.username) {
-      message += `@${user.username}`;
-    } else {
-      message += `${user.first_name || 'User'}`;
-    }
+    message += `\n\n👨‍💼 <b>Заказчик в Telegram:</b> @${user.username || 'без username'}`;
     message += `\n🆔 <b>User ID:</b> ${user.id}`;
   }
 
