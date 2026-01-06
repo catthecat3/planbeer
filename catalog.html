@@ -489,20 +489,29 @@
     }
     document.addEventListener('DOMContentLoaded', () => {
       fixOrderBtn();
-      // Слушаем фокус/блюр на input/textarea в корзине
+      // Слушаем фокус/блюр на input/textarea в корзине и поднимаем модалку выше
       const cart = document.getElementById('cart');
+      const cartModalContent = document.querySelector('.cart-modal-content');
+      function raiseCartModal(up) {
+        if (!cartModalContent) return;
+        if (up) {
+          cartModalContent.style.paddingBottom = '60vh'; // поднимаем окно ещё выше
+        } else {
+          cartModalContent.style.paddingBottom = '';
+        }
+      }
       if (cart) {
         cart.addEventListener('focusin', (e) => {
           if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
             fixOrderBtn(true);
+            raiseCartModal(true);
           }
         });
         cart.addEventListener('focusout', (e) => {
-          // Через небольшой timeout, чтобы не было скачка при переходе между полями
           setTimeout(() => {
-            // Если ни один input не в фокусе — возвращаем фиксированную кнопку
             if (!cart.querySelector('input:focus, textarea:focus')) {
               fixOrderBtn();
+              raiseCartModal(false);
             }
           }, 100);
         });
