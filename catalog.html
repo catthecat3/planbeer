@@ -510,11 +510,26 @@
           cartModalContent.style.paddingBottom = '';
         }
       }
+      // Автопрокрутка к активному input/textarea
+      function scrollInputIntoView(target) {
+        if (!cartModalContent || !target) return;
+        // Только если поле внутри корзины
+        if (cartModalContent.contains(target)) {
+          setTimeout(() => {
+            target.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center',
+              inline: 'nearest'
+            });
+          }, 200); // чуть позже, чтобы клавиатура успела открыться
+        }
+      }
       if (cart) {
         cart.addEventListener('focusin', (e) => {
           if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
             fixOrderBtn(true);
             raiseCartModal(true);
+            scrollInputIntoView(e.target);
           }
         });
         cart.addEventListener('focusout', (e) => {
