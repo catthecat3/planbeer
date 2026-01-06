@@ -516,11 +516,21 @@
         // Только если поле внутри корзины
         if (cartModalContent.contains(target)) {
           setTimeout(() => {
-            target.scrollIntoView({
-              behavior: 'smooth',
-              block: 'center',
-              inline: 'nearest'
-            });
+            if (target.id === 'phone') {
+              // Для поля телефона — строго к нижней части окна, чтобы было над кнопкой
+              target.scrollIntoView({
+                behavior: 'smooth',
+                block: 'end',
+                inline: 'nearest'
+              });
+            } else {
+              // Для остальных — по центру
+              target.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center',
+                inline: 'nearest'
+              });
+            }
           }, 200); // чуть позже, чтобы клавиатура успела открыться
         }
       }
