@@ -376,16 +376,11 @@
       border-color: #e2e8f0 !important;
     }
     body.tg-mode .cart-modal-content {
-      max-height: 50vh !important;
+      max-height: 70vh;
+      max-height: var(--tg-viewport-stable-height, 70vh);
       border-radius: 24px 24px 0 0;
       box-shadow: 0 -10px 40px rgba(0,0,0,0.2);
-      padding-bottom: 160px !important;
-      overflow-y: auto !important;
-    }
-    body.tg-mode input:focus,
-    body.tg-mode select:focus {
-    position: relative;
-    z-index: 9999;
+      padding-bottom: calc(env(safe-area-inset-bottom, 16px) + 60px) !important;
     }
     @media (max-width: 600px) {
       body.tg-mode .cart-modal-content {
@@ -1198,6 +1193,5 @@ loadProducts();
 </script>
 </body>
 </html>
-
 
 
