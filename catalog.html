@@ -399,7 +399,8 @@
            class="w-full p-3 rounded-xl mb-3 focus:border-amber-500 focus:outline-none transition text-base">
     
     <input id="phone" placeholder="Телефон для связи" type="tel"
-           class="w-full p-3 rounded-xl mb-4 focus:border-amber-500 focus:outline-none transition text-base" maxlength="16" autocomplete="off">
+              class="w-full p-3 rounded-xl mb-1 focus:border-amber-500 focus:outline-none transition text-base" maxlength="16" autocomplete="off">
+            <div id="phoneError" class="text-red-500 text-xs mb-3 hidden">Пожалуйста, введите полный номер телефона</div>
     
     <button onclick="createOrder()" 
             class="btn-craft w-full bg-amber-500 text-white py-4 rounded-xl font-bold text-base shadow-lg">
@@ -478,6 +479,13 @@ document.addEventListener('DOMContentLoaded', function() {
       if (val.length > 6) formatted += '-' + val.substring(6, 8);
       if (val.length > 8) formatted += '-' + val.substring(8, 10);
       phoneInput.value = formatted;
+      // Проверка на длину
+      const phoneError = document.getElementById('phoneError');
+      if (val.length < 10) {
+        phoneError.classList.remove('hidden');
+      } else {
+        phoneError.classList.add('hidden');
+      }
     });
     phoneInput.addEventListener('keydown', function(e) {
       // Запрет букв и спецсимволов кроме Backspace, Delete, стрелок
@@ -890,18 +898,27 @@ function renderCart() {
 
 async function createOrder() {
   const name = document.getElementById("customerName").value.trim();
-  const phone = document.getElementById("phone").value.trim();
-  
+  const phoneInput = document.getElementById("phone");
+  const phone = phoneInput.value.trim();
+  const phoneError = document.getElementById('phoneError');
+
   if (!name) {
     showToast("Введите ваше имя!", 'error');
     return;
   }
-  
-  if (!phone) {
-    showToast("Введите телефон!", 'error');
+
+  // Проверка номера: только 10 цифр после +7
+  let phoneDigits = phone.replace(/[^\d]/g, '');
+  if (phoneDigits.startsWith('7')) phoneDigits = phoneDigits.slice(1);
+  if (phoneDigits.length < 10) {
+    phoneError.classList.remove('hidden');
+    showToast("Введите полный номер телефона!", 'error');
+    phoneInput.focus();
     return;
+  } else {
+    phoneError.classList.add('hidden');
   }
-  
+
   if (cart.length === 0) {
     showToast("Добавьте товары в корзину!", 'error');
     return;
