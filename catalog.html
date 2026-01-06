@@ -461,11 +461,11 @@
       </button>
     </div>
     <script>
-    // Фиксируем кнопку внизу в tg-mode
-    function fixOrderBtn() {
+    // Фиксируем кнопку внизу в tg-mode, но если input в фокусе — делаем обычной
+    function fixOrderBtn(forceStatic = false) {
       const wrap = document.getElementById('orderBtnWrap');
       if (!wrap) return;
-      if (document.body.classList.contains('tg-mode')) {
+      if (document.body.classList.contains('tg-mode') && !forceStatic) {
         wrap.style.position = 'fixed';
         wrap.style.left = '0';
         wrap.style.right = '0';
@@ -476,12 +476,39 @@
         wrap.style.boxShadow = '0 -4px 20px rgba(0,0,0,0.08)';
         document.querySelector('.cart-modal-content').style.paddingBottom = '120px';
       } else {
-        wrap.style = '';
+        wrap.style.position = '';
+        wrap.style.left = '';
+        wrap.style.right = '';
+        wrap.style.bottom = '';
+        wrap.style.zIndex = '';
+        wrap.style.background = '';
+        wrap.style.padding = '';
+        wrap.style.boxShadow = '';
         document.querySelector('.cart-modal-content').style.paddingBottom = '';
       }
     }
-    document.addEventListener('DOMContentLoaded', fixOrderBtn);
-    window.addEventListener('resize', fixOrderBtn);
+    document.addEventListener('DOMContentLoaded', () => {
+      fixOrderBtn();
+      // Слушаем фокус/блюр на input/textarea в корзине
+      const cart = document.getElementById('cart');
+      if (cart) {
+        cart.addEventListener('focusin', (e) => {
+          if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+            fixOrderBtn(true);
+          }
+        });
+        cart.addEventListener('focusout', (e) => {
+          // Через небольшой timeout, чтобы не было скачка при переходе между полями
+          setTimeout(() => {
+            // Если ни один input не в фокусе — возвращаем фиксированную кнопку
+            if (!cart.querySelector('input:focus, textarea:focus')) {
+              fixOrderBtn();
+            }
+          }, 100);
+        });
+      }
+    });
+    window.addEventListener('resize', () => fixOrderBtn());
     </script>
   </div>
 </div>
