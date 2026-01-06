@@ -674,35 +674,96 @@ function renderProducts() {
   
   grid.innerHTML = filteredProducts.map((product, index) => {
     const realIndex = products.indexOf(product);
+    const isBeer = product.category && (product.category.toLowerCase() === 'пиво' || product.category.toLowerCase() === 'крафтовое пиво');
+    const literId = `liter-amount-${realIndex}`;
+    const priceId = `price-amount-${realIndex}`;
     return `
-      <div class="product-card rounded-xl shadow-sm hover:shadow-md transition fade-up overflow-hidden" style="animation-delay: ${index * 0.05}s">
+      <div class="product-card rounded-xl shadow-sm hover:shadow-md transition fade-up overflow-hidden flex flex-col h-full" style="animation-delay: ${index * 0.05}s">
         <div class="relative">
           <img src="${product.image}" class="w-full h-36 object-contain bg-slate-50" alt="${product.name}" loading="lazy" onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'">
           ${product.category ? `<span class="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded-lg text-xs font-semibold">${product.category}</span>` : ''}
         </div>
-        <div class="p-3">
+        <div class="p-3 flex flex-col flex-1">
           <h3 class="font-bold mb-1 text-sm leading-tight">${product.name}</h3>
           <p class="text-xs text-slate-600 mb-2">${product.desc}</p>
-          <p class="text-base font-bold text-amber-600 mb-2">${product.price} ₽</p>
-          <button onclick="addToCart(${realIndex})" class="btn-craft w-full bg-amber-500 text-white py-2 rounded-lg font-semibold text-sm">
-            В корзину
-          </button>
+          <div class="mb-2 flex flex-col gap-1">
+            ${isBeer ? `
+              <div class=\"flex items-center justify-center gap-1 bg-slate-100 rounded-lg py-1\">
+                <button type=\"button\" class=\"w-7 h-7 flex items-center justify-center bg-white border border-slate-300 rounded-full font-bold text-lg hover:bg-slate-200 transition\" onclick=\"changeLiter('${literId}','${priceId}',${product.price},-0.5)\">-</button>
+                <span id=\"${literId}\" class=\"font-semibold text-base mx-2\" style=\"min-width:2.5em;display:inline-block;text-align:center;\">1 л</span>
+                <button type=\"button\" class=\"w-7 h-7 flex items-center justify-center bg-white border border-slate-300 rounded-full font-bold text-lg hover:bg-slate-200 transition\" onclick=\"changeLiter('${literId}','${priceId}',${product.price},0.5)\">+</button>
+              </div>
+              <p id=\"${priceId}\" class=\"text-base font-bold text-amber-600 text-center\">${product.price} ₽</p>
+            ` : `
+              <div class=\"flex items-center justify-center gap-1 bg-slate-100 rounded-lg py-1\">
+                <button type=\"button\" class=\"w-7 h-7 flex items-center justify-center bg-white border border-slate-300 rounded-full font-bold text-lg hover:bg-slate-200 transition\" onclick=\"changeCount('${literId}','${priceId}',${product.price},-1)\">-</button>
+                <span id=\"${literId}\" class=\"font-semibold text-base mx-2\" style=\"min-width:2.5em;display:inline-block;text-align:center;\">1 шт</span>
+                <button type=\"button\" class=\"w-7 h-7 flex items-center justify-center bg-white border border-slate-300 rounded-full font-bold text-lg hover:bg-slate-200 transition\" onclick=\"changeCount('${literId}','${priceId}',${product.price},1)\">+</button>
+              </div>
+              <p id=\"${priceId}\" class=\"text-base font-bold text-amber-600 text-center\">${product.price} ₽</p>
+            `}
+          </div>
+          <div class="mt-auto">
+            <button onclick="addToCart(${realIndex}${isBeer ? `, true` : ''})" class="btn-craft w-full bg-amber-500 text-white py-2 rounded-lg font-semibold text-sm mt-2">
+              В корзину
+            </button>
+          </div>
         </div>
       </div>
     `;
   }).join('');
 }
 
-function addToCart(index) {
+function addToCart(index, isBeer) {
   const product = products[index];
-  cart.push({ name: product.name, price: product.price });
+  let amount = 1;
+  let label = '';
+  let price = product.price;
+  if (isBeer) {
+    const literEl = document.getElementById(`liter-amount-${index}`);
+    if (literEl) {
+      amount = parseFloat(literEl.textContent);
+    }
+    price = Math.round(product.price * amount * 100) / 100;
+    label = ` (${amount} л)`;
+    cart.push({ name: product.name + label, price: price, liter: amount });
+  } else {
+    const countEl = document.getElementById(`liter-amount-${index}`);
+    if (countEl) {
+      amount = parseInt(countEl.textContent);
+    }
+    price = product.price * amount;
+    label = ` (${amount} шт)`;
+    cart.push({ name: product.name + label, price: price, count: amount });
+  }
   updateCount();
   renderCart();
   showToast(`${product.name} добавлен!`);
-  
   if (isTelegramWebApp && tg) {
     tg.HapticFeedback.impactOccurred('light');
   }
+}
+
+function changeLiter(literId, priceId, pricePerLiter, delta) {
+  const literEl = document.getElementById(literId);
+  const priceEl = document.getElementById(priceId);
+  if (!literEl || !priceEl) return;
+  let value = parseFloat(literEl.textContent);
+  value = Math.max(0.5, Math.round((value + delta) * 2) / 2); // шаг 0.5, минимум 0.5
+  literEl.textContent = value + ' л';
+  const newPrice = Math.round(pricePerLiter * value * 100) / 100;
+  priceEl.textContent = newPrice + ' ₽';
+}
+
+function changeCount(countId, priceId, pricePerOne, delta) {
+  const countEl = document.getElementById(countId);
+  const priceEl = document.getElementById(priceId);
+  if (!countEl || !priceEl) return;
+  let value = parseInt(countEl.textContent);
+  value = Math.max(1, value + delta); // минимум 1
+  countEl.textContent = value + ' шт';
+  const newPrice = pricePerOne * value;
+  priceEl.textContent = newPrice + ' ₽';
 }
 
 function updateCount() {
@@ -759,28 +820,30 @@ function renderCart() {
   let total = 0;
   const grouped = {};
   cart.forEach(item => {
-    if (grouped[item.name]) {
-      grouped[item.name].count++;
-      grouped[item.name].total += item.price;
+    // Для товаров с литрами группируем по имени и литражу
+    const key = item.liter ? `${item.name}` : item.name;
+    if (grouped[key]) {
+      grouped[key].count++;
+      grouped[key].total += item.price;
     } else {
-      grouped[item.name] = { count: 1, price: item.price, total: item.price };
+      grouped[key] = { count: 1, price: item.price, total: item.price, liter: item.liter };
     }
     total += item.price;
   });
-  
+
   container.innerHTML = Object.keys(grouped).map(name => {
     const item = grouped[name];
     return `
       <div class="cart-item flex justify-between items-center">
         <div class="flex-1">
           <p class="font-semibold text-sm">${name}</p>
-          <p class="text-xs text-slate-500">${item.count} шт × ${item.price} ₽</p>
+          <p class="text-xs text-slate-500">${item.count} шт × ${item.price} ₽${item.liter ? ` (${item.liter} л)` : ''}</p>
         </div>
         <p class="font-bold text-sm text-amber-600">${item.total} ₽</p>
       </div>
     `;
   }).join('');
-  
+
   document.getElementById('totalPrice').textContent = total + ' ₽';
   totalEl.classList.remove('hidden');
 }
@@ -806,11 +869,13 @@ async function createOrder() {
   
   const grouped = {};
   cart.forEach(item => {
-    if (grouped[item.name]) {
-      grouped[item.name].count++;
-      grouped[item.name].total += item.price;
+    // Для товаров с литрами группируем по имени и литражу
+    const key = item.liter ? `${item.name}` : item.name;
+    if (grouped[key]) {
+      grouped[key].count++;
+      grouped[key].total += item.price;
     } else {
-      grouped[item.name] = { count: 1, price: item.price, total: item.price };
+      grouped[key] = { count: 1, price: item.price, total: item.price, liter: item.liter };
     }
   });
   
@@ -824,7 +889,8 @@ async function createOrder() {
     items: Object.keys(grouped).map(name => ({ 
       name, 
       count: grouped[name].count, 
-      total: grouped[name].total 
+      total: grouped[name].total,
+      liter: grouped[name].liter
     })),
     total: total,
     status: 'new',
@@ -853,7 +919,7 @@ async function createOrder() {
   let orderText = `📋 Заказ №${orderId}%0A%0A👤 ${name}%0A📞 ${phone}%0A%0A`;
   Object.keys(grouped).forEach(name => {
     const item = grouped[name];
-    orderText += `• ${name} x${item.count} = ${item.total}₽%0A`;
+    orderText += `• ${name} x${item.count}${item.liter ? ` (${item.liter} л)` : ''} = ${item.total}₽%0A`;
   });
   orderText += `%0A💰 Итого: ${total}₽`;
   
