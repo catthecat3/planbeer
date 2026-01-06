@@ -1021,7 +1021,7 @@ async function createOrder() {
 
   if (!orderSaved) {
     showToast('Ошибка сохранения заказа: ' + (firebaseError && firebaseError.message ? firebaseError.message : firebaseError || ''), 'error');
-    // return; // если хотите прервать дальнейшие действия
+    return; // Прерываем выполнение, чтобы не было путаницы и лишних действий
   }
   
   // Отправляем уведомление в Telegram
