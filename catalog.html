@@ -399,7 +399,7 @@
            class="w-full p-3 rounded-xl mb-3 focus:border-amber-500 focus:outline-none transition text-base">
     
     <input id="phone" placeholder="Телефон для связи" type="tel"
-           class="w-full p-3 rounded-xl mb-4 focus:border-amber-500 focus:outline-none transition text-base">
+           class="w-full p-3 rounded-xl mb-4 focus:border-amber-500 focus:outline-none transition text-base" maxlength="16" autocomplete="off">
     
     <button onclick="createOrder()" 
             class="btn-craft w-full bg-amber-500 text-white py-4 rounded-xl font-bold text-base shadow-lg">
@@ -463,6 +463,44 @@ let currentCategory = 'all';
 let isTelegramWebApp = false;
 let tg = null;
 
+// Маска для телефона
+document.addEventListener('DOMContentLoaded', function() {
+  const phoneInput = document.getElementById('phone');
+  if (phoneInput) {
+    phoneInput.value = '+7 ';
+    phoneInput.addEventListener('input', function(e) {
+      let val = phoneInput.value.replace(/[^\d]/g, '');
+      if (val.startsWith('7')) val = val.slice(1); // убираем лишнюю 7 если пользователь ввёл
+      if (val.length > 10) val = val.slice(0, 10);
+      let formatted = '+7 ';
+      if (val.length > 0) formatted += val.substring(0, 3);
+      if (val.length > 3) formatted += '-' + val.substring(3, 6);
+      if (val.length > 6) formatted += '-' + val.substring(6, 8);
+      if (val.length > 8) formatted += '-' + val.substring(8, 10);
+      phoneInput.value = formatted;
+    });
+    phoneInput.addEventListener('keydown', function(e) {
+      // Запрет букв и спецсимволов кроме Backspace, Delete, стрелок
+      if (
+        !['Backspace','Delete','ArrowLeft','ArrowRight','Tab'].includes(e.key) &&
+        (e.key.length === 1 && !/\d/.test(e.key))
+      ) {
+        e.preventDefault();
+      }
+      // Не даём удалить +7 
+      if ((phoneInput.selectionStart <= 3) && (e.key === 'Backspace' || e.key === 'Delete')) {
+        e.preventDefault();
+      }
+    });
+    // При фокусе курсор после +7 
+    phoneInput.addEventListener('focus', function() {
+      if (phoneInput.value.length < 4) phoneInput.value = '+7 ';
+      setTimeout(() => {
+        if (phoneInput.selectionStart < 4) phoneInput.setSelectionRange(phoneInput.value.length, phoneInput.value.length);
+      }, 0);
+    });
+  }
+});
 // Инициализация Telegram WebApp
 function initTelegramWebApp() {
   if (window.Telegram && window.Telegram.WebApp) {
