@@ -722,7 +722,7 @@ function addToCart(index, isBeer) {
   if (isBeer) {
     const literEl = document.getElementById(`liter-amount-${index}`);
     if (literEl) {
-      amount = parseFloat(literEl.textContent);
+      amount = parseFloat(literEl.textContent.replace(/[^\d.,]/g, '').replace(',', '.'));
     }
     price = Math.round(product.price * amount * 100) / 100;
     label = ` (${amount} л)`;
@@ -730,7 +730,7 @@ function addToCart(index, isBeer) {
   } else {
     const countEl = document.getElementById(`liter-amount-${index}`);
     if (countEl) {
-      amount = parseInt(countEl.textContent);
+      amount = parseInt(countEl.textContent.replace(/[^\d]/g, ''));
     }
     price = product.price * amount;
     label = ` (${amount} шт)`;
