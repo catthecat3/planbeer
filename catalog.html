@@ -461,7 +461,8 @@
     
     <input id="phone" placeholder="Телефон для связи" type="tel"
               class="w-full p-3 rounded-xl mb-1 focus:border-amber-500 focus:outline-none transition text-base" maxlength="16" autocomplete="off">
-            <div id="phoneError" class="text-red-500 text-xs mb-3 hidden">Пожалуйста, введите полный номер телефона</div>
+    <div id="phone-anchor" style="height:1px;"></div>
+    <div id="phoneError" class="text-red-500 text-xs mb-3 hidden">Пожалуйста, введите полный номер телефона</div>
     
     <div id="orderBtnWrap">
       <button onclick="createOrder()" 
@@ -502,26 +503,18 @@
       // Слушаем фокус/блюр на input/textarea в корзине и поднимаем модалку выше
       const cart = document.getElementById('cart');
       const cartModalContent = document.querySelector('.cart-modal-content');
-      function raiseCartModal(up) {
-        if (!cartModalContent) return;
-        if (up && isTelegramWebApp) {
-          cartModalContent.style.paddingBottom = '70vh'; // только в tg-mode
-        } else {
-          cartModalContent.style.paddingBottom = '';
-        }
-      }
-      // Автопрокрутка к активному input/textarea
-      function scrollInputIntoView(target) {
-        if (!cartModalContent || !target) return;
-        if (!isTelegramWebApp) return; // только для tg-mode
-        if (cartModalContent.contains(target)) {
+      // Новый способ: якорь под телефоном
+      function scrollPhoneAnchorIntoView() {
+        if (!isTelegramWebApp) return;
+        const anchor = document.getElementById('phone-anchor');
+        if (anchor) {
           setTimeout(() => {
-            target.scrollIntoView({
+            anchor.scrollIntoView({
               behavior: 'smooth',
               block: 'center',
               inline: 'nearest'
             });
-          }, 250); // чуть позже, чтобы клавиатура успела открыться
+          }, 250);
         }
       }
       // Автофокус на телефон после имени (и в tg-mode, и в браузере)
@@ -539,15 +532,15 @@
         cart.addEventListener('focusin', (e) => {
           if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
             fixOrderBtn(true);
-            raiseCartModal(true);
-            scrollInputIntoView(e.target);
+            if (e.target.id === 'phone') {
+              scrollPhoneAnchorIntoView();
+            }
           }
         });
         cart.addEventListener('focusout', (e) => {
           setTimeout(() => {
             if (!cart.querySelector('input:focus, textarea:focus')) {
               fixOrderBtn();
-              raiseCartModal(false);
             }
           }, 100);
         });
