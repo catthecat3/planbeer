@@ -453,9 +453,10 @@
            class="w-full p-3 rounded-xl mb-3 focus:border-amber-500 focus:outline-none transition text-base">
     
     <input id="phone" placeholder="Телефон для связи" type="tel"
-              class="w-full p-3 rounded-xl mb-1 focus:border-amber-500 focus:outline-none transition text-base" maxlength="16" autocomplete="off">
+          class="w-full p-3 rounded-xl mb-1 focus:border-amber-500 focus:outline-none transition text-base" maxlength="16" autocomplete="off">
     <div id="phone-anchor" style="height:1px;"></div>
     <div id="phoneError" class="text-red-500 text-xs mb-3 hidden">Пожалуйста, введите полный номер телефона</div>
+    <textarea id="orderComment" placeholder="Комментарий к заказу (необязательно)" class="w-full p-3 rounded-xl mb-3 focus:border-amber-500 focus:outline-none transition text-base resize-none" rows="2" maxlength="300"></textarea>
     
     <div id="orderBtnWrap">
       <button onclick="createOrder()" 
@@ -700,8 +701,9 @@ function initTelegramWebApp() {
     // Получаем данные пользователя
     if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
       const user = tg.initDataUnsafe.user;
-      const userName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
-      if (userName) {
+      let userName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+      // Не подставлять если пусто, точка или только пробелы
+      if (userName && userName !== '.' && userName.replace(/\s/g, '') !== '') {
         setTimeout(() => {
           const nameInput = document.getElementById('customerName');
           if (nameInput) nameInput.value = userName;
@@ -1048,6 +1050,7 @@ async function createOrder() {
   const phoneInput = document.getElementById("phone");
   const phone = phoneInput.value.trim();
   const phoneError = document.getElementById('phoneError');
+  const comment = document.getElementById('orderComment') ? document.getElementById('orderComment').value.trim() : '';
 
   if (!name) {
     showToast("Введите ваше имя!", 'error');
@@ -1070,7 +1073,7 @@ async function createOrder() {
     showToast("Добавьте товары в корзину!", 'error');
     return;
   }
-  
+
   const grouped = {};
   cart.forEach(item => {
     // Для товаров с литрами группируем по имени и литражу
@@ -1082,14 +1085,15 @@ async function createOrder() {
       grouped[key] = { count: 1, price: item.price, total: item.price, liter: item.liter };
     }
   });
-  
+
   const total = cart.reduce((sum, item) => sum + item.price, 0);
   const orderId = Date.now();
-  
+
   const order = {
     id: orderId,
     name: name,
     phone: phone,
+    comment: comment,
     items: Object.keys(grouped).map(name => {
       const item = grouped[name];
       const base = {
@@ -1104,9 +1108,9 @@ async function createOrder() {
     status: 'new',
     date: new Date().toLocaleString('ru-RU')
   };
-  
+
   console.log('📦 Создаём заказ:', order);
-  
+
   // Сохраняем заказ в Firebase
   let orderSaved = false;
   let firebaseError = null;
@@ -1128,21 +1132,23 @@ async function createOrder() {
     showToast('Ошибка сохранения заказа: ' + (firebaseError && firebaseError.message ? firebaseError.message : firebaseError || ''), 'error');
     return; // Прерываем выполнение, чтобы не было путаницы и лишних действий
   }
-  
+
   // Отправляем уведомление в Telegram
   await sendTelegramNotification(order);
-  
+
   // Формируем ссылку для связи
-  let orderText = `📋 Заказ №${orderId}%0A%0A👤 ${name}%0A📞 ${phone}%0A%0A`;
+  let orderText = `📋 Заказ №${orderId}%0A%0A👤 ${name}%0A📞 ${phone}%0A`;
+  if (comment) orderText += `%0A💬 ${comment}%0A`;
+  orderText += `%0A`;
   Object.keys(grouped).forEach(name => {
     const item = grouped[name];
     orderText += `• ${name} x${item.count}${item.liter ? ` (${item.liter} л)` : ''} = ${item.total}₽%0A`;
   });
   orderText += `%0A💰 Итого: ${total}₽`;
-  
+
   document.getElementById('orderNumber').textContent = `#${orderId}`;
   document.getElementById('tgLink').href = `https://t.me/${ADMIN_TG}?text=${orderText}`;
-  
+
   document.getElementById("cart").classList.add("hidden");
   document.getElementById('successModal').classList.remove('hidden');
   document.body.classList.add("modal-open");
