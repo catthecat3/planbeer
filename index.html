@@ -5,130 +5,1069 @@
   <title>PLAN BEER — Пиво с характером</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow+Condensed:wght@300;400;500;600;700&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 
   <style>
-    body { font-family: 'Inter', sans-serif; }
-    .font-heading { font-family: 'Cinzel Decorative', cursive; }
-
-    /* Кнопки craft */
-    .btn-craft {
-      position: relative;
-      overflow: hidden;
-      transition: transform 0.25s cubic-bezier(.4,0,.2,1), box-shadow 0.25s ease, background 0.3s ease;
+    :root {
+      --gold: #D4A017;
+      --gold-light: #F0C040;
+      --dark: #0D0D0D;
+      --dark-2: #181818;
+      --dark-3: #242424;
+      --off-white: #F2EFE8;
+      --text-muted: rgba(242,239,232,0.55);
     }
-    .btn-craft::after {
-      content: "";
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; overflow-x: hidden; scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Barlow', sans-serif;
+      background: var(--dark);
+      color: var(--off-white);
+    }
+
+    /* ===== TICKER ===== */
+    #tickerBar {
+      background: var(--gold);
+      color: #000;
+      height: 38px;
+      overflow: hidden;
+      position: relative;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+    }
+    #tickerBar.hidden { display: none; }
+
+    .ticker-label {
+      flex-shrink: 0;
+      background: #000;
+      color: var(--gold);
+      font-family: 'Oswald', sans-serif;
+      font-size: 14px;
+      letter-spacing: 2px;
+      padding: 0 16px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      z-index: 2;
+    }
+    .ticker-track {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+    .ticker-inner {
+      display: flex;
+      white-space: nowrap;
+      animation: ticker-scroll 28s linear infinite;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 1px;
+    }
+    .ticker-inner span { padding: 0 40px; }
+    @keyframes ticker-scroll {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    /* ===== NAV ===== */
+    nav {
+      position: fixed;
+      top: 38px;
+      left: 0; right: 0;
+      z-index: 90;
+      padding: 0 40px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background 0.4s ease, top 0.3s ease;
+    }
+    nav.scrolled {
+      background: rgba(13,13,13,0.95);
+      backdrop-filter: blur(12px);
+    }
+    #tickerBar.hidden ~ nav,
+    body:not(:has(#tickerBar)) nav {
+      top: 0;
+    }
+    .nav-logo {
+      font-family: 'Oswald', sans-serif;
+      font-size: 28px;
+      letter-spacing: 4px;
+      color: var(--off-white);
+      text-decoration: none;
+      line-height: 1;
+    }
+    .nav-logo span { color: var(--gold); }
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+    }
+    .nav-links a {
+      color: rgba(242,239,232,0.75);
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--gold); }
+    .nav-cta {
+      background: var(--gold);
+      color: #000 !important;
+      padding: 10px 24px;
+      border-radius: 2px;
+      font-size: 11px !important;
+      letter-spacing: 2px;
+    }
+    .nav-cta:hover { background: var(--gold-light) !important; color: #000 !important; }
+
+    @media (max-width: 768px) {
+      nav { padding: 0 20px; }
+      .nav-links { display: none; }
+    }
+
+    /* ===== HERO ===== */
+    #hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* Slideshow */
+    .slides-container {
       position: absolute;
       inset: 0;
-      background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,.25), transparent 70%);
-      transform: translateX(-100%);
-      transition: transform .6s ease;
+      z-index: 0;
     }
-    .btn-craft:hover::after { transform: translateX(100%); }
-    .btn-craft:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 18px 40px rgba(0,0,0,.35); }
-    .btn-craft:active { transform: scale(0.97); }
+    .slide {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      opacity: 0;
+      transition: opacity 1.2s ease;
+    }
+    .slide.active { opacity: 1; }
 
-    .social-btn { transition: transform .25s ease, color .25s ease; }
-    .social-btn:hover { transform: translateY(-4px) rotate(-2deg) scale(1.08); }
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to bottom,
+        rgba(0,0,0,0.25) 0%,
+        rgba(0,0,0,0.55) 50%,
+        rgba(13,13,13,0.9) 100%
+      );
+      z-index: 1;
+    }
 
-    .fade-up { opacity: 0; transform: translateY(40px); transition: all .8s cubic-bezier(.4,0,.2,1); }
-    .fade-up.show { opacity: 1; transform: translateY(0); }
-    /* === MOBILE FIX: STOP HORIZONTAL DRIFT === */
-html, body {
-  width: 100%;
-  overflow-x: hidden;
-}
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      padding: 0 20px;
+      max-width: 900px;
+    }
+    .hero-tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--gold);
+      border: 1px solid rgba(212,160,23,0.4);
+      padding: 6px 18px;
+      margin-bottom: 32px;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.3s forwards;
+    }
+    .hero-title {
+      font-family: 'Oswald', sans-serif;
+      font-size: clamp(72px, 14vw, 160px);
+      letter-spacing: 8px;
+      line-height: 0.9;
+      color: var(--off-white);
+      margin-bottom: 24px;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.5s forwards;
+    }
+    .hero-title em {
+      font-style: normal;
+      color: var(--gold);
+      display: block;
+    }
+    .hero-sub {
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 300; letter-spacing: 0.5px;
+      font-size: clamp(18px, 2.5vw, 26px);
+      font-style: italic;
+      color: rgba(242,239,232,0.75);
+      margin-bottom: 48px;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.7s forwards;
+    }
+    .hero-btns {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.9s forwards;
+    }
+    .btn-primary {
+      background: var(--gold);
+      color: #000;
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      padding: 16px 40px;
+      border-radius: 2px;
+      text-decoration: none;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-primary::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.3), transparent 70%);
+      transform: translateX(-100%);
+      transition: transform 0.5s ease;
+    }
+    .btn-primary:hover::after { transform: translateX(100%); }
+    .btn-primary:hover { background: var(--gold-light); transform: translateY(-2px); box-shadow: 0 16px 40px rgba(212,160,23,0.35); }
 
-@media (max-width: 768px) {
-  .parallax-bg {
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
-    animation: none; /* убираем float ТОЛЬКО на мобилках */
-  }
-}
+    .btn-ghost {
+      background: transparent;
+      color: var(--off-white);
+      font-weight: 600;
+      font-size: 12px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      padding: 15px 40px;
+      border: 1px solid rgba(242,239,232,0.3);
+      border-radius: 2px;
+      text-decoration: none;
+      transition: all 0.25s ease;
+    }
+    .btn-ghost:hover { border-color: var(--gold); color: var(--gold); }
+
+    /* Slide dots */
+    .slide-dots {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 3;
+      display: flex;
+      gap: 10px;
+    }
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.35);
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .dot.active { background: var(--gold); width: 24px; border-radius: 3px; }
+
+    /* Scroll hint */
+    .scroll-hint {
+      position: absolute;
+      bottom: 40px;
+      right: 48px;
+      z-index: 3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      animation: fadeIn 1s 1.5s forwards;
+    }
+    .scroll-hint span {
+      font-size: 9px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.4);
+      writing-mode: vertical-rl;
+    }
+    .scroll-line {
+      width: 1px;
+      height: 48px;
+      background: linear-gradient(to bottom, var(--gold), transparent);
+      animation: scrollPulse 2s infinite;
+    }
+    @keyframes scrollPulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
+
+    /* Socials on hero */
+    .hero-socials {
+      position: absolute;
+      left: 40px;
+      bottom: 40px;
+      z-index: 3;
+      display: flex;
+      gap: 20px;
+      opacity: 0;
+      animation: fadeIn 1s 1.5s forwards;
+    }
+    .hero-socials a {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.45);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .hero-socials a:hover { color: var(--gold); }
+    @media (max-width: 768px) {
+      .hero-socials, .scroll-hint { display: none; }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    /* ===== DIVIDER ===== */
+    .divider {
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(212,160,23,0.4), transparent);
+      margin: 0;
+    }
+
+    /* ===== SECTION COMMON ===== */
+    section {
+      padding: 100px 40px;
+    }
+    @media (max-width: 768px) {
+      section { padding: 64px 20px; }
+    }
+
+    .section-tag {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 16px;
+      display: block;
+    }
+    .section-title {
+      font-family: 'Oswald', sans-serif;
+      font-size: clamp(40px, 6vw, 72px);
+      letter-spacing: 3px;
+      line-height: 1;
+      color: var(--off-white);
+      margin-bottom: 20px;
+    }
+    .section-text {
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 300; letter-spacing: 0.5px;
+      font-size: 20px;
+      line-height: 1.7;
+      color: var(--text-muted);
+      max-width: 560px;
+    }
+
+    /* ===== ABOUT ===== */
+    #about {
+      background: var(--dark-2);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+    @media (max-width: 900px) {
+      #about { grid-template-columns: 1fr; gap: 40px; }
+    }
+    .about-features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-top: 48px;
+    }
+    .feature-card {
+      border: 1px solid rgba(212,160,23,0.15);
+      border-radius: 4px;
+      padding: 24px 20px;
+      background: rgba(255,255,255,0.02);
+      transition: border-color 0.3s, background 0.3s;
+    }
+    .feature-card:hover {
+      border-color: rgba(212,160,23,0.5);
+      background: rgba(212,160,23,0.04);
+    }
+    .feature-icon { font-size: 28px; margin-bottom: 12px; }
+    .feature-label-num {
+      font-family: 'Oswald', sans-serif;
+      font-size: 36px;
+      color: var(--gold);
+      line-height: 1;
+      margin-bottom: 12px;
+      opacity: 0.9;
+    }
+    .feature-name {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+    .feature-desc { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+
+    .about-image {
+      position: relative;
+      aspect-ratio: 4/5;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .about-image img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      filter: grayscale(30%) contrast(1.05);
+      transition: filter 0.5s ease;
+    }
+    .about-image:hover img { filter: grayscale(0%) contrast(1.1); }
+    .about-image::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border: 1px solid rgba(212,160,23,0.2);
+      z-index: 1;
+      pointer-events: none;
+    }
+    .about-badge {
+      position: absolute;
+      bottom: 24px;
+      right: -12px;
+      background: var(--gold);
+      color: #000;
+      font-family: 'Oswald', sans-serif;
+      font-size: 13px;
+      letter-spacing: 2px;
+      padding: 10px 20px;
+      z-index: 2;
+    }
+
+    /* ===== STORES ===== */
+    #stores {
+      background: var(--dark);
+    }
+    #stores .inner {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    #stores .header-row {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 56px;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .stores-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 2px;
+    }
+    .store-card {
+      background: var(--dark-2);
+      padding: 40px 36px;
+      position: relative;
+      overflow: hidden;
+      transition: background 0.3s;
+      cursor: default;
+    }
+    .store-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--gold);
+      transform: scaleX(0);
+      transition: transform 0.4s ease;
+    }
+    .store-card:hover { background: var(--dark-3); }
+    .store-card:hover::after { transform: scaleX(1); }
+    .store-number {
+      font-family: 'Oswald', sans-serif;
+      font-size: 56px;
+      color: rgba(212,160,23,0.1);
+      line-height: 1;
+      margin-bottom: 16px;
+      display: block;
+    }
+    .store-name {
+      font-family: 'Oswald', sans-serif;
+      font-size: 26px;
+      letter-spacing: 2px;
+      color: var(--off-white);
+      margin-bottom: 16px;
+    }
+    .store-info { display: flex; flex-direction: column; gap: 8px; }
+    .store-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .store-row .ico { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+    .store-tg {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 24px;
+      color: var(--gold);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      text-decoration: none;
+      transition: opacity 0.2s;
+    }
+    .store-tg:hover { opacity: 0.75; }
+    .store-tg svg { width: 16px; height: 16px; }
+    .no-stores {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--text-muted);
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 300; letter-spacing: 0.5px;
+      font-size: 22px;
+      font-style: italic;
+    }
+
+    /* Skeleton loader */
+    .store-skeleton {
+      background: var(--dark-2);
+      padding: 40px 36px;
+      animation: shimmer 1.6s infinite;
+    }
+    .skeleton-line {
+      height: 12px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 2px;
+      margin-bottom: 12px;
+    }
+    @keyframes shimmer {
+      0%, 100% { opacity: 0.7; }
+      50% { opacity: 1; }
+    }
+
+    /* ===== CONTACTS ===== */
+    #contacts {
+      background: var(--dark-2);
+    }
+    #contacts .inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      #contacts .inner { grid-template-columns: 1fr; gap: 48px; }
+    }
+    .contact-items { display: flex; flex-direction: column; gap: 28px; margin-top: 40px; }
+    .contact-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 20px;
+      padding-bottom: 28px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .contact-item:last-child { border-bottom: none; }
+    .contact-icon {
+      width: 44px;
+      height: 44px;
+      border: 1px solid rgba(212,160,23,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+      border-radius: 2px;
+    }
+    .contact-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 4px;
+    }
+    .contact-value { font-size: 16px; color: var(--off-white); line-height: 1.5; }
+
+    .socials-row { display: flex; gap: 16px; margin-top: 40px; }
+    .social-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 24px;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 2px;
+      color: var(--off-white);
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      transition: all 0.25s;
+    }
+    .social-link:hover { border-color: var(--gold); color: var(--gold); background: rgba(212,160,23,0.05); }
+    .social-link svg { width: 18px; height: 18px; }
+
+    .map-placeholder {
+      background: var(--dark-3);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 4px;
+      height: 360px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+      color: var(--text-muted);
+    }
+    .map-placeholder .icon { font-size: 48px; opacity: 0.5; }
+    .map-placeholder p { font-size: 14px; letter-spacing: 1px; }
+
+    /* ===== FOOTER ===== */
+    footer {
+      background: var(--dark);
+      border-top: 1px solid rgba(212,160,23,0.15);
+      padding: 32px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    @media (max-width: 768px) { footer { padding: 24px 20px; flex-direction: column; text-align: center; } }
+    .footer-logo {
+      font-family: 'Oswald', sans-serif;
+      font-size: 22px;
+      letter-spacing: 4px;
+      color: var(--off-white);
+    }
+    .footer-logo span { color: var(--gold); }
+    .footer-copy { font-size: 12px; color: rgba(255,255,255,0.3); letter-spacing: 1px; }
+    .footer-age {
+      font-family: 'Oswald', sans-serif;
+      font-size: 18px;
+      color: rgba(255,255,255,0.25);
+      letter-spacing: 2px;
+    }
+
+    /* ===== SCROLL REVEAL ===== */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal-delay-1 { transition-delay: 0.15s; }
+    .reveal-delay-2 { transition-delay: 0.3s; }
+    .reveal-delay-3 { transition-delay: 0.45s; }
   </style>
 </head>
-<body class="font-body bg-slate-50 text-slate-900">
+<body>
 
-<!-- HERO -->
-<section class="relative min-h-screen fade-up">
-  <img src="https://i.pinimg.com/originals/db/35/9a/db359a8ae87f8a076305374c30765d85.jpg"
-       class="absolute inset-0 w-full h-full object-cover">
-  <div class="absolute inset-0 bg-black/60"></div>
+<!-- ===== TICKER ===== -->
+<div id="tickerBar" class="hidden">
+  <div class="ticker-label">НОВОСТИ</div>
+  <div class="ticker-track">
+    <div class="ticker-inner" id="tickerInner">
+      <!-- Заполняется из Firebase -->
+    </div>
+  </div>
+</div>
 
-  <!-- Центрируем текст по центру фото -->
-  <div class="absolute inset-0 flex justify-center items-center">
-    <div class="text-center px-6">
-      <h1 class="font-heading text-5xl md:text-6xl lg:text-7xl mb-4 text-white">PlAN BEER</h1>
-      <h1 class="font-heading text-5xl md:text-6xl lg:text-7xl mb-4 text-white">Пиво с характером</h1>
-      <p class="text-lg md:text-xl text-slate-200 mb-8 max-w-xl mx-auto">Крафтовое и классическое пиво в Альметьевске</p>
+<!-- ===== NAV ===== -->
+<nav id="navbar">
+  <a href="/" class="nav-logo">PLAN <span>BEER</span></a>
+  <ul class="nav-links">
+    <li><a href="#about">О нас</a></li>
+    <li><a href="#stores">Магазины</a></li>
+    <li><a href="#contacts">Контакты</a></li>
+    <li><a href="catalog.html" class="nav-cta">Каталог</a></li>
+  </ul>
+</nav>
 
-      <div class="flex flex-col sm:flex-row gap-4 items-center justify-center">
-        <a href="catalog.html" class="btn-craft bg-amber-500 px-8 py-4 rounded-xl text-black font-semibold w-fit">Перейти в каталог</a>
-        <a href="#contacts" class="btn-craft border border-white/40 text-white hover:text-amber-400 px-8 py-4 rounded-xl w-fit">Контакты</a>
+<!-- ===== HERO ===== -->
+<section id="hero">
+  <!-- Slideshow -->
+  <div class="slides-container" id="slidesContainer">
+    <!-- Слайды рендерятся из Firebase -->
+  </div>
+  <div class="hero-overlay"></div>
+
+  <div class="hero-content">
+    <div class="hero-tag">Альметьевск • Craft Beer</div>
+    <h1 class="hero-title">
+      PLAN
+      <em>BEER</em>
+    </h1>
+    <p class="hero-sub">Пиво с характером — крафтовое и классическое</p>
+    <div class="hero-btns">
+      <a href="catalog.html" class="btn-primary">Перейти в каталог</a>
+      <a href="#stores" class="btn-ghost">Найти магазин</a>
+    </div>
+  </div>
+
+  <div class="slide-dots" id="slideDots"></div>
+
+  <div class="hero-socials">
+    <a href="https://t.me/planbeermag" target="_blank">Telegram</a>
+    <a href="https://instagram.com/planbeermag" target="_blank">Instagram</a>
+  </div>
+
+  <div class="scroll-hint">
+    <span>Scroll</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ===== ABOUT ===== -->
+<section id="about" class="reveal">
+  <div>
+    <span class="section-tag">О нас</span>
+    <h2 class="section-title">ПИВО,<br>КОТОРОЕ ПОМНЯТ</h2>
+    <p class="section-text">
+      PLAN BEER — магазин пивных напитков с отобранным ассортиментом, где ценят вкус, свежесть и атмосферу. Мы работаем с лучшими поставщиками и следим за каждой партией.
+    </p>
+
+    <div class="about-features">
+      <div class="feature-card reveal reveal-delay-1">
+        <div class="feature-label-num">01</div>
+        <div class="feature-name">Крафт</div>
+        <div class="feature-desc">Редкие и крафтовые сорта со всего мира</div>
       </div>
+      <div class="feature-card reveal reveal-delay-2">
+        <div class="feature-label-num">02</div>
+        <div class="feature-name">Свежесть</div>
+        <div class="feature-desc">Строгий контроль температуры хранения</div>
+      </div>
+      <div class="feature-card reveal reveal-delay-3">
+        <div class="feature-label-num">03</div>
+        <div class="feature-name">Живое</div>
+        <div class="feature-desc">Пиво на разлив — всегда свежее</div>
+      </div>
+      <div class="feature-card reveal reveal-delay-1">
+        <div class="feature-label-num">04</div>
+        <div class="feature-name">Ассортимент</div>
+        <div class="feature-desc">Более 50 позиций в наличии</div>
+      </div>
+    </div>
+  </div>
 
-      <div class="flex gap-6 mt-8 text-white/90 text-sm justify-center">
-        <a href="https://t.me/planbeermag" target="_blank" class="social-btn flex items-center gap-2 hover:text-amber-400 transition">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M9.999 15.17l-.397 4.06c.568 0 .814-.244 1.112-.536l2.668-2.53 5.53 4.04c1.014.56 1.734.266 1.99-.94L24 3.9c.33-1.51-.546-2.1-1.533-1.74L1.1 9.5c-1.47.57-1.45 1.38-.27 1.75l5.53 1.72L19.2 5.4c.61-.37 1.17-.17.71.21"/>
-          </svg>
-          Мы в Telegram
-        </a>
-        <a href="https://instagram.com/USERNAME_IG" target="_blank" class="social-btn flex items-center gap-2 hover:text-amber-400 transition">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M7.75 2h8.5C19.55 2 22 4.46 22 7.75v8.5C22 19.55 19.54 22 16.25 22h-8.5C4.45 22 2 19.54 2 16.25v-8.5C2 4.45 4.46 2 7.75 2zm0 1.5A4.26 4.26 0 003.5 7.75v8.5A4.26 4.26 0 007.75 20.5h8.5a4.26 4.26 0 004.25-4.25v-8.5A4.26 4.26 0 0016.25 3.5zM12 7a5 5 0 110 10 5 5 0 010-10zm0 1.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7zm5.25-.88a1.13 1.13 0 11-2.26 0 1.13 1.13 0 012.26 0z"/>
-          </svg>
-          Instagram
-        </a>
+  <div class="about-image reveal reveal-delay-2">
+    <img src="https://images.unsplash.com/photo-1608270586620-248524c67de9?w=600&q=80" alt="Plan Beer">
+    <div class="about-badge">С 2021 года</div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ===== STORES ===== -->
+<section id="stores">
+  <div class="inner">
+    <div class="header-row reveal">
+      <div>
+        <span class="section-tag">Адреса</span>
+        <h2 class="section-title">НАШИ<br>МАГАЗИНЫ</h2>
+      </div>
+      <a href="catalog.html" class="btn-primary" style="align-self:flex-end">Заказать онлайн</a>
+    </div>
+
+    <div class="stores-grid" id="storesGrid">
+      <!-- Skeleton -->
+      <div class="store-skeleton">
+        <div class="skeleton-line" style="width:40%;height:48px;margin-bottom:20px;"></div>
+        <div class="skeleton-line" style="width:70%;"></div>
+        <div class="skeleton-line" style="width:55%;"></div>
+        <div class="skeleton-line" style="width:40%;"></div>
+      </div>
+      <div class="store-skeleton">
+        <div class="skeleton-line" style="width:40%;height:48px;margin-bottom:20px;"></div>
+        <div class="skeleton-line" style="width:60%;"></div>
+        <div class="skeleton-line" style="width:50%;"></div>
+        <div class="skeleton-line" style="width:35%;"></div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ABOUT -->
-<section class="py-24 fade-up">
-  <div class="max-w-6xl mx-auto px-6 text-center">
-    <h2 class="font-heading text-4xl mb-6">О магазине</h2>
-    <p class="text-slate-600 max-w-2xl mx-auto">
-      PLAN BEER — магазин пивных напитков с отобранным ассортиментом,
-      где ценят вкус, свежесть и атмосферу.
-    </p>
+<div class="divider"></div>
+
+<!-- ===== CONTACTS ===== -->
+<section id="contacts">
+  <div class="inner">
+    <div class="reveal">
+      <span class="section-tag">Связаться</span>
+      <h2 class="section-title">КОНТАКТЫ</h2>
+      <div class="contact-items">
+        <div class="contact-item">
+          <div class="contact-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>
+          <div>
+            <div class="contact-label">Город</div>
+            <div class="contact-value">Альметьевск, Республика Татарстан</div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="contact-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.0 1.22 2 2 0 012 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 14.92v2z"/></svg></div>
+          <div>
+            <div class="contact-label">Телефон</div>
+            <div class="contact-value">+7 (999) 123-45-67</div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="contact-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+          <div>
+            <div class="contact-label">Режим работы</div>
+            <div class="contact-value">Ежедневно: 10:00 — 23:00</div>
+          </div>
+        </div>
+      </div>
+      <div class="socials-row">
+        <a href="https://t.me/planbeermag" target="_blank" class="social-link">
+          <svg fill="currentColor" viewBox="0 0 24 24"><path d="M9.999 15.17l-.397 4.06c.568 0 .814-.244 1.112-.536l2.668-2.53 5.53 4.04c1.014.56 1.734.266 1.99-.94L24 3.9c.33-1.51-.546-2.1-1.533-1.74L1.1 9.5c-1.47.57-1.45 1.38-.27 1.75l5.53 1.72L19.2 5.4c.61-.37 1.17-.17.71.21"/></svg>
+          Telegram
+        </a>
+        <a href="https://instagram.com/planbeermag" target="_blank" class="social-link">
+          <svg fill="currentColor" viewBox="0 0 24 24"><path d="M7.75 2h8.5C19.55 2 22 4.46 22 7.75v8.5C22 19.55 19.54 22 16.25 22h-8.5C4.45 22 2 19.54 2 16.25v-8.5C2 4.45 4.46 2 7.75 2zm0 1.5A4.26 4.26 0 003.5 7.75v8.5A4.26 4.26 0 007.75 20.5h8.5a4.26 4.26 0 004.25-4.25v-8.5A4.26 4.26 0 0016.25 3.5zM12 7a5 5 0 110 10 5 5 0 010-10zm0 1.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7zm5.25-.88a1.13 1.13 0 11-2.26 0 1.13 1.13 0 012.26 0z"/></svg>
+          Instagram
+        </a>
+      </div>
+    </div>
+
+    <div class="reveal reveal-delay-2">
+      <div class="map-placeholder">
+        <div class="icon" style="font-size:36px;opacity:0.25"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg></div>
+        <p>Альметьевск, Татарстан</p>
+      </div>
+    </div>
   </div>
 </section>
 
-<!-- CONTACTS -->
-<section id="contacts" class="bg-slate-900 text-white py-20 fade-up">
-  <div class="max-w-4xl mx-auto px-6 text-center">
-    <h3 class="font-heading text-3xl mb-8">Контакты</h3>
-    <p class="mb-3 text-lg">📍 Альметьевск</p>
-    <p class="mb-3 text-lg">📞 +7 (999) 123-45-67</p>
-    <p class="text-lg">🕒 10:00 — 23:00</p>
-  </div>
-</section>
-
-<footer class="text-center py-6 text-sm text-slate-500">© 2025 PLAN BEER • 18+</footer>
+<!-- ===== FOOTER ===== -->
+<footer>
+  <div class="footer-logo">PLAN <span>BEER</span></div>
+  <div class="footer-copy">© 2025 PLAN BEER — Все права защищены</div>
+  <div class="footer-age">18+</div>
+</footer>
 
 <script>
-  // IntersectionObserver для повторной анимации
-  const observer = new IntersectionObserver(entries => {
-    entries.forEach(entry => {
-      if(entry.isIntersecting) {
-        entry.target.classList.add("show");
-      } else {
-        entry.target.classList.remove("show"); // убираем при выходе
-      }
+// ===== FIREBASE CONFIG =====
+const firebaseConfig = {
+  apiKey: "AIzaSyBcGBRRqjAEomg6P0DvQoR-FrXsyFC7dXk",
+  authDomain: "planbeer-218de.firebaseapp.com",
+  databaseURL: "https://planbeer-218de-default-rtdb.firebaseio.com",
+  projectId: "planbeer-218de",
+  storageBucket: "planbeer-218de.firebasestorage.app",
+  messagingSenderId: "571000195828",
+  appId: "1:571000195828:web:bda2bbab90eb7eba182ca1"
+};
+
+let db = null;
+try {
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.database();
+} catch(e) { console.error('Firebase init error:', e); }
+
+// ===== SLIDESHOW =====
+const DEFAULT_SLIDES = [
+  "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1600&q=80",
+  "https://images.unsplash.com/photo-1535958636474-b021ee887b13?w=1600&q=80",
+  "https://images.unsplash.com/photo-1566633806827-5952db98a0a5?w=1600&q=80"
+];
+
+let slides = [...DEFAULT_SLIDES];
+let currentSlide = 0;
+let slideInterval = null;
+
+function buildSlides(urls) {
+  const container = document.getElementById('slidesContainer');
+  const dotsEl = document.getElementById('slideDots');
+  container.innerHTML = '';
+  dotsEl.innerHTML = '';
+
+  if (!urls || urls.length === 0) urls = DEFAULT_SLIDES;
+  slides = urls;
+
+  urls.forEach((url, i) => {
+    const div = document.createElement('div');
+    div.className = 'slide' + (i === 0 ? ' active' : '');
+    div.style.backgroundImage = `url('${url}')`;
+    container.appendChild(div);
+
+    const dot = document.createElement('div');
+    dot.className = 'dot' + (i === 0 ? ' active' : '');
+    dot.onclick = () => goToSlide(i);
+    dotsEl.appendChild(dot);
+  });
+
+  if (urls.length > 1) {
+    clearInterval(slideInterval);
+    slideInterval = setInterval(() => goToSlide((currentSlide + 1) % slides.length), 5000);
+  }
+}
+
+function goToSlide(idx) {
+  const allSlides = document.querySelectorAll('.slide');
+  const allDots = document.querySelectorAll('.dot');
+  allSlides[currentSlide].classList.remove('active');
+  allDots[currentSlide].classList.remove('active');
+  currentSlide = idx;
+  allSlides[currentSlide].classList.add('active');
+  allDots[currentSlide].classList.add('active');
+}
+
+// ===== TICKER =====
+function buildTicker(text) {
+  const tickerBar = document.getElementById('tickerBar');
+  const inner = document.getElementById('tickerInner');
+  // Дублируем текст для бесшовной прокрутки
+  const repeated = Array(8).fill(text).join('  ✦  ');
+  inner.innerHTML = `<span>${repeated}</span><span aria-hidden="true">${repeated}</span>`;
+}
+
+// ===== STORES =====
+function buildStores(stores) {
+  const grid = document.getElementById('storesGrid');
+
+  if (!stores || stores.length === 0) {
+    grid.innerHTML = `<div class="no-stores" style="grid-column:1/-1">Магазины скоро появятся</div>`;
+    return;
+  }
+
+  grid.innerHTML = stores.map((store, i) => `
+    <div class="store-card reveal reveal-delay-${(i % 3) + 1}">
+      <span class="store-number">0${i + 1}</span>
+      <div class="store-name">${store.name || 'Магазин'}</div>
+      <div class="store-info">
+        ${store.address ? `<div class="store-row"><span class="ico">—</span><span>${store.address}</span></div>` : ''}
+        ${store.hours ? `<div class="store-row"><span class="ico">—</span><span>${store.hours}</span></div>` : ''}
+        ${store.phone ? `<div class="store-row"><span class="ico">—</span><span>${store.phone}</span></div>` : ''}
+        ${store.comment ? `<div class="store-row"><span class="ico">—</span><span>${store.comment}</span></div>` : ''}
+      </div>
+      ${store.tgLink ? `
+        <a href="https://t.me/${store.tgLink.replace('@','')}" target="_blank" class="store-tg">
+          <svg fill="currentColor" viewBox="0 0 24 24"><path d="M9.999 15.17l-.397 4.06c.568 0 .814-.244 1.112-.536l2.668-2.53 5.53 4.04c1.014.56 1.734.266 1.99-.94L24 3.9c.33-1.51-.546-2.1-1.533-1.74L1.1 9.5c-1.47.57-1.45 1.38-.27 1.75l5.53 1.72L19.2 5.4c.61-.37 1.17-.17.71.21"/></svg>
+          Написать в Telegram
+        </a>
+      ` : ''}
+    </div>
+  `).join('');
+
+  // Trigger reveal for new cards
+  setTimeout(() => {
+    document.querySelectorAll('.store-card.reveal').forEach(el => {
+      el.classList.add('visible');
     });
-  }, { threshold: 0.15 });
+  }, 100);
+}
 
-  document.querySelectorAll(".fade-up").forEach(el => observer.observe(el));
+// ===== LOAD FROM FIREBASE =====
+function loadSettings() {
+  if (!db) {
+    buildSlides(DEFAULT_SLIDES);
+    buildStores([]);
+    return;
+  }
+
+  // Ticker
+  db.ref('settings/ticker').on('value', snap => {
+    const data = snap.val();
+    const tickerBar = document.getElementById('tickerBar');
+    if (data && data.enabled && data.text) {
+      buildTicker(data.text);
+      tickerBar.classList.remove('hidden');
+      // Сдвигаем nav вниз
+      document.getElementById('navbar').style.top = '38px';
+    } else {
+      tickerBar.classList.add('hidden');
+      document.getElementById('navbar').style.top = '0';
+    }
+  });
+
+  // Slides
+  db.ref('settings/slides').on('value', snap => {
+    const data = snap.val();
+    let urls = [];
+    if (data) {
+      if (Array.isArray(data)) {
+        urls = data.filter(Boolean);
+      } else if (typeof data === 'object') {
+        urls = Object.values(data).filter(Boolean);
+      }
+    }
+    buildSlides(urls.length ? urls : DEFAULT_SLIDES);
+  });
+
+  // Stores
+  db.ref('stores').on('value', snap => {
+    const data = snap.val();
+    let stores = [];
+    if (data) {
+      if (Array.isArray(data)) {
+        stores = data.filter(Boolean);
+      } else if (typeof data === 'object') {
+        stores = Object.values(data).filter(Boolean);
+      }
+    }
+    buildStores(stores);
+  });
+}
+
+// ===== NAV SCROLL =====
+window.addEventListener('scroll', () => {
+  const nav = document.getElementById('navbar');
+  if (window.scrollY > 60) {
+    nav.classList.add('scrolled');
+  } else {
+    nav.classList.remove('scrolled');
+  }
+});
+
+// ===== SCROLL REVEAL =====
+const revealObs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) e.target.classList.add('visible');
+  });
+}, { threshold: 0.12 });
+
+document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
+
+// ===== INIT =====
+buildSlides(DEFAULT_SLIDES); // Сразу показываем дефолтные
+loadSettings();             // Потом подгружаем из Firebase
 </script>
-
 </body>
 </html>
-
-
