@@ -333,6 +333,8 @@
       </button>
       <button class="tab-btn" onclick="switchTab('categories')">🏷️ Категории</button>
       <button class="tab-btn" onclick="switchTab('stats')">📊 Статистика</button>
+      <button class="tab-btn" onclick="switchTab('landing')">🖼️ Лендинг</button>
+      <button class="tab-btn" onclick="switchTab('stores')">📍 Магазины</button>
     </div>
 
     <!-- Вкладка: Товары -->
@@ -428,6 +430,108 @@
       
       <div id="statsHistory"></div>
     </div>
+
+    <!-- ===== Вкладка: Лендинг ===== -->
+    <div id="landingTab" class="hidden">
+      <h2 class="text-2xl sm:text-3xl font-bold mb-6">🖼️ Настройки лендинга</h2>
+
+      <!-- Бегущая строка -->
+      <div class="bg-white rounded-2xl p-6 shadow-lg mb-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-bold">📢 Бегущая строка</h3>
+          <label class="flex items-center gap-3 cursor-pointer select-none">
+            <span class="text-sm font-semibold text-slate-500">Выкл</span>
+            <div class="relative w-12 h-6">
+              <input type="checkbox" id="tickerEnabled" class="sr-only peer" onchange="saveTickerSettings()">
+              <div class="w-12 h-6 bg-slate-300 rounded-full peer-checked:bg-amber-500 transition-colors duration-200"></div>
+              <div class="absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 peer-checked:translate-x-6"></div>
+            </div>
+            <span class="text-sm font-semibold text-slate-500">Вкл</span>
+          </label>
+        </div>
+        <div class="mb-3">
+          <label class="block text-sm font-semibold mb-2 text-slate-600">Текст строки (разделяй через ✦)</label>
+          <textarea id="tickerText" rows="3" placeholder="🍺 Новинка! Немецкое пшеничное — уже в наличии  ✦  🎉 Скидка 10% на крафт до конца недели"
+            class="w-full border-2 border-slate-200 rounded-xl p-4 text-sm focus:border-amber-500 focus:outline-none resize-none"></textarea>
+        </div>
+        <div class="flex gap-3 flex-wrap">
+          <button onclick="saveTickerSettings()" class="btn-craft bg-amber-500 text-black font-bold px-6 py-3 rounded-xl hover:bg-amber-600 transition">
+            💾 Сохранить
+          </button>
+          <button onclick="previewTicker()" class="btn-craft bg-slate-100 text-slate-700 font-semibold px-6 py-3 rounded-xl hover:bg-slate-200 transition">
+            👁️ Предпросмотр
+          </button>
+        </div>
+        <div id="tickerPreview" class="hidden mt-4 rounded-xl overflow-hidden">
+          <div style="background:#D4A017;height:38px;display:flex;align-items:center;overflow:hidden;">
+            <div style="background:#000;color:#D4A017;font-weight:900;font-size:11px;letter-spacing:3px;padding:0 14px;height:100%;display:flex;align-items:center;flex-shrink:0;">НОВОСТИ</div>
+            <div style="overflow:hidden;flex:1;"><div id="tickerPreviewInner" style="white-space:nowrap;font-size:12px;font-weight:700;letter-spacing:1px;color:#000;padding:0 12px;"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Слайдшоу -->
+      <div class="bg-white rounded-2xl p-6 shadow-lg">
+        <h3 class="text-lg font-bold mb-2">🖼️ Фоновое слайдшоу</h3>
+        <p class="text-sm text-slate-500 mb-5">Добавляй URL или загружай файл. Фото будут показаны на главном фоне.</p>
+        <div id="slidesList" class="space-y-3 mb-5"></div>
+        <div class="flex gap-3 mb-3 flex-wrap">
+          <input type="url" id="slideUrlInput" placeholder="https://example.com/photo.jpg"
+            class="flex-1 min-w-0 border-2 border-slate-200 rounded-xl px-4 py-3 text-sm focus:border-amber-500 focus:outline-none">
+          <button onclick="addSlideByUrl()" class="btn-craft bg-green-500 text-white font-bold px-5 py-3 rounded-xl hover:bg-green-600 whitespace-nowrap">
+            ➕ URL
+          </button>
+        </div>
+        <div class="border-2 border-dashed border-slate-200 rounded-xl p-5 text-center cursor-pointer hover:border-amber-400 transition" onclick="document.getElementById('slideFileInput').click()">
+          <input type="file" id="slideFileInput" accept="image/*" class="hidden" onchange="addSlideByFile(event)">
+          <div class="text-2xl mb-1">📷</div>
+          <p class="text-sm text-slate-500 font-semibold">Загрузить с устройства</p>
+          <p class="text-xs text-slate-400 mt-1">JPG, PNG, WEBP (до 2MB)</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Вкладка: Магазины ===== -->
+    <div id="storesAdminTab" class="hidden">
+      <div class="mb-6 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
+        <h2 class="text-2xl sm:text-3xl font-bold">📍 Магазины на лендинге</h2>
+        <button onclick="showAddStoreForm()" class="btn-craft bg-green-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-green-600">
+          ➕ Добавить магазин
+        </button>
+      </div>
+
+      <div id="storeForm" class="hidden bg-white rounded-2xl p-6 shadow-lg mb-6 border-2 border-amber-400">
+        <h3 class="text-lg font-bold mb-5" id="storeFormTitle">Новый магазин</h3>
+        <input type="hidden" id="storeEditKey">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div><label class="block text-sm font-semibold mb-2 text-slate-600">Название *</label>
+            <input type="text" id="storeName" placeholder="PLAN BEER — ТЦ Восток"
+              class="w-full border-2 border-slate-200 rounded-xl px-4 py-3 focus:border-amber-500 focus:outline-none"></div>
+          <div><label class="block text-sm font-semibold mb-2 text-slate-600">Адрес</label>
+            <input type="text" id="storeAddress" placeholder="ул. Ленина, 14"
+              class="w-full border-2 border-slate-200 rounded-xl px-4 py-3 focus:border-amber-500 focus:outline-none"></div>
+          <div><label class="block text-sm font-semibold mb-2 text-slate-600">Часы работы</label>
+            <input type="text" id="storeHours" placeholder="Пн–Вс: 10:00 – 23:00"
+              class="w-full border-2 border-slate-200 rounded-xl px-4 py-3 focus:border-amber-500 focus:outline-none"></div>
+          <div><label class="block text-sm font-semibold mb-2 text-slate-600">Телефон</label>
+            <input type="text" id="storePhone" placeholder="+7 (999) 123-45-67"
+              class="w-full border-2 border-slate-200 rounded-xl px-4 py-3 focus:border-amber-500 focus:outline-none"></div>
+          <div><label class="block text-sm font-semibold mb-2 text-slate-600">Telegram (без @)</label>
+            <input type="text" id="storeTgLink" placeholder="planbeermag"
+              class="w-full border-2 border-slate-200 rounded-xl px-4 py-3 focus:border-amber-500 focus:outline-none"></div>
+          <div><label class="block text-sm font-semibold mb-2 text-slate-600">Примечание</label>
+            <input type="text" id="storeComment" placeholder="Рядом с центральным рынком"
+              class="w-full border-2 border-slate-200 rounded-xl px-4 py-3 focus:border-amber-500 focus:outline-none"></div>
+        </div>
+        <div class="flex gap-3">
+          <button onclick="saveStore()" class="btn-craft bg-amber-500 text-black font-bold px-6 py-3 rounded-xl hover:bg-amber-600">💾 Сохранить</button>
+          <button onclick="hideStoreForm()" class="btn-craft bg-slate-100 text-slate-700 font-semibold px-6 py-3 rounded-xl hover:bg-slate-200">Отмена</button>
+        </div>
+      </div>
+
+      <div id="storesList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </div>
+
   </div>
 </div>
 
@@ -623,10 +727,248 @@ function switchTab(tab) {
   document.getElementById('ordersTab').classList.toggle('hidden', tab !== 'orders');
   document.getElementById('categoriesTab').classList.toggle('hidden', tab !== 'categories');
   document.getElementById('statsTab').classList.toggle('hidden', tab !== 'stats');
+  document.getElementById('landingTab').classList.toggle('hidden', tab !== 'landing');
+  document.getElementById('storesAdminTab').classList.toggle('hidden', tab !== 'stores');
   
   if (tab === 'orders') renderOrders();
   if (tab === 'categories') renderCategoriesList();
   if (tab === 'stats') renderStats();
+  if (tab === 'landing') loadLandingSettings();
+  if (tab === 'stores') loadStores();
+}
+
+// ========== ЛЕНДИНГ — БЕГУЩАЯ СТРОКА ==========
+
+function loadLandingSettings() {
+  if (!isFirebaseInitialized || !db) return;
+  db.ref('settings/ticker').once('value', snap => {
+    const data = snap.val();
+    if (data) {
+      document.getElementById('tickerEnabled').checked = !!data.enabled;
+      document.getElementById('tickerText').value = data.text || '';
+    }
+  });
+  loadSlidesAdmin();
+}
+
+async function saveTickerSettings() {
+  if (!isFirebaseInitialized || !db) { showToast('Firebase не подключен', 'error'); return; }
+  const enabled = document.getElementById('tickerEnabled').checked;
+  const text = document.getElementById('tickerText').value.trim();
+  try {
+    await db.ref('settings/ticker').set({ enabled, text: text || '' });
+    showToast(enabled ? '✅ Бегущая строка включена и сохранена!' : '✅ Бегущая строка выключена');
+  } catch(e) {
+    showToast('Ошибка сохранения: ' + e.message, 'error');
+  }
+}
+
+function previewTicker() {
+  const text = document.getElementById('tickerText').value || 'Текст бегущей строки...';
+  const preview = document.getElementById('tickerPreview');
+  const inner = document.getElementById('tickerPreviewInner');
+  const repeated = Array(6).fill(text).join('  ✦  ');
+  inner.textContent = repeated;
+  preview.classList.toggle('hidden');
+}
+
+// ========== ЛЕНДИНГ — СЛАЙДШОУ ==========
+
+let adminSlides = [];
+
+function loadSlidesAdmin() {
+  if (!isFirebaseInitialized || !db) return;
+  db.ref('settings/slides').once('value', snap => {
+    const data = snap.val();
+    if (data) {
+      if (Array.isArray(data)) adminSlides = data.filter(Boolean);
+      else adminSlides = Object.values(data).filter(Boolean);
+    } else {
+      adminSlides = [];
+    }
+    renderSlidesAdmin();
+  });
+}
+
+function renderSlidesAdmin() {
+  const list = document.getElementById('slidesList');
+  if (adminSlides.length === 0) {
+    list.innerHTML = '<p class="text-slate-400 text-sm text-center py-4">Слайдов нет — будут показаны дефолтные фото</p>';
+    return;
+  }
+  list.innerHTML = adminSlides.map((url, i) => `
+    <div class="flex items-center gap-3 bg-slate-50 rounded-xl p-3">
+      <img src="${url}" class="w-20 h-14 object-cover rounded-lg flex-shrink-0" onerror="this.src='https://via.placeholder.com/80x56?text=err'">
+      <div class="flex-1 min-w-0">
+        <p class="text-xs text-slate-500 truncate">${url.length > 60 ? url.substring(0,60)+'...' : url}</p>
+        <p class="text-xs text-slate-400 mt-1">Слайд ${i+1}</p>
+      </div>
+      <div class="flex gap-2 flex-shrink-0">
+        ${i > 0 ? `<button onclick="moveSlide(${i},-1)" class="text-slate-400 hover:text-slate-700 text-lg font-bold" title="Вверх">↑</button>` : '<span class="w-6"></span>'}
+        ${i < adminSlides.length-1 ? `<button onclick="moveSlide(${i},1)" class="text-slate-400 hover:text-slate-700 text-lg font-bold" title="Вниз">↓</button>` : '<span class="w-6"></span>'}
+        <button onclick="deleteSlide(${i})" class="text-red-400 hover:text-red-600 font-bold text-lg">×</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function addSlideByUrl() {
+  const input = document.getElementById('slideUrlInput');
+  const url = input.value.trim();
+  if (!url || !url.startsWith('http')) { showToast('Введите корректный URL', 'error'); return; }
+  adminSlides.push(url);
+  input.value = '';
+  await saveSlides();
+  renderSlidesAdmin();
+}
+
+function addSlideByFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { showToast('Файл слишком большой (макс. 2MB)', 'error'); return; }
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    adminSlides.push(e.target.result);
+    await saveSlides();
+    renderSlidesAdmin();
+    showToast('✅ Фото добавлено!');
+  };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+}
+
+async function deleteSlide(i) {
+  if (!confirm('Удалить этот слайд?')) return;
+  adminSlides.splice(i, 1);
+  await saveSlides();
+  renderSlidesAdmin();
+}
+
+async function moveSlide(i, dir) {
+  const j = i + dir;
+  if (j < 0 || j >= adminSlides.length) return;
+  [adminSlides[i], adminSlides[j]] = [adminSlides[j], adminSlides[i]];
+  await saveSlides();
+  renderSlidesAdmin();
+}
+
+async function saveSlides() {
+  if (!isFirebaseInitialized || !db) return;
+  try {
+    await db.ref('settings/slides').set(adminSlides);
+    showToast('✅ Слайды сохранены!');
+  } catch(e) {
+    showToast('Ошибка: ' + e.message, 'error');
+  }
+}
+
+// ========== МАГАЗИНЫ ==========
+
+let storesData = {};
+
+function loadStores() {
+  if (!isFirebaseInitialized || !db) return;
+  db.ref('stores').on('value', snap => {
+    const data = snap.val();
+    storesData = data || {};
+    renderStoresList();
+  });
+}
+
+function renderStoresList() {
+  const list = document.getElementById('storesList');
+  const entries = Object.entries(storesData);
+  if (entries.length === 0) {
+    list.innerHTML = '<div class="col-span-full text-center py-12 text-slate-500"><p class="text-4xl mb-3">📍</p><p>Магазинов пока нет — нажми «Добавить магазин»</p></div>';
+    return;
+  }
+  list.innerHTML = entries.map(([key, store]) => `
+    <div class="bg-white rounded-2xl p-5 shadow-md hover:shadow-lg transition border border-slate-100">
+      <div class="flex justify-between items-start mb-3">
+        <h3 class="font-bold text-base leading-tight">${store.name || 'Магазин'}</h3>
+        <div class="flex gap-2 ml-2 flex-shrink-0">
+          <button onclick="editStore('${key}')" class="text-amber-500 hover:text-amber-700 text-sm font-semibold px-2 py-1 rounded-lg hover:bg-amber-50">✏️</button>
+          <button onclick="deleteStore('${key}')" class="text-red-400 hover:text-red-600 text-sm font-semibold px-2 py-1 rounded-lg hover:bg-red-50">🗑️</button>
+        </div>
+      </div>
+      <div class="space-y-1.5 text-sm text-slate-600">
+        ${store.address ? `<p>📍 ${store.address}</p>` : ''}
+        ${store.hours ? `<p>🕐 ${store.hours}</p>` : ''}
+        ${store.phone ? `<p>📞 ${store.phone}</p>` : ''}
+        ${store.tgLink ? `<p>💬 @${store.tgLink}</p>` : ''}
+        ${store.comment ? `<p class="text-slate-400 italic">${store.comment}</p>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function showAddStoreForm() {
+  document.getElementById('storeFormTitle').textContent = 'Новый магазин';
+  document.getElementById('storeEditKey').value = '';
+  ['storeName','storeAddress','storeHours','storePhone','storeTgLink','storeComment'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('storeForm').classList.remove('hidden');
+  document.getElementById('storeForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function editStore(key) {
+  const store = storesData[key];
+  if (!store) return;
+  document.getElementById('storeFormTitle').textContent = 'Редактировать магазин';
+  document.getElementById('storeEditKey').value = key;
+  document.getElementById('storeName').value = store.name || '';
+  document.getElementById('storeAddress').value = store.address || '';
+  document.getElementById('storeHours').value = store.hours || '';
+  document.getElementById('storePhone').value = store.phone || '';
+  document.getElementById('storeTgLink').value = store.tgLink || '';
+  document.getElementById('storeComment').value = store.comment || '';
+  document.getElementById('storeForm').classList.remove('hidden');
+  document.getElementById('storeForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function hideStoreForm() {
+  document.getElementById('storeForm').classList.add('hidden');
+}
+
+async function saveStore() {
+  const name = document.getElementById('storeName').value.trim();
+  if (!name) { showToast('Введите название магазина', 'error'); return; }
+  if (!isFirebaseInitialized || !db) { showToast('Firebase не подключен', 'error'); return; }
+
+  const store = {
+    name,
+    address: document.getElementById('storeAddress').value.trim(),
+    hours: document.getElementById('storeHours').value.trim(),
+    phone: document.getElementById('storePhone').value.trim(),
+    tgLink: document.getElementById('storeTgLink').value.trim().replace('@',''),
+    comment: document.getElementById('storeComment').value.trim()
+  };
+
+  const editKey = document.getElementById('storeEditKey').value;
+  try {
+    if (editKey) {
+      await db.ref('stores/' + editKey).set(store);
+      showToast('✅ Магазин обновлён!');
+    } else {
+      await db.ref('stores').push(store);
+      showToast('✅ Магазин добавлен на лендинг!');
+    }
+    hideStoreForm();
+  } catch(e) {
+    showToast('Ошибка: ' + e.message, 'error');
+  }
+}
+
+async function deleteStore(key) {
+  if (!confirm('Удалить магазин с лендинга?')) return;
+  if (!isFirebaseInitialized || !db) return;
+  try {
+    await db.ref('stores/' + key).remove();
+    showToast('✅ Магазин удалён');
+  } catch(e) {
+    showToast('Ошибка: ' + e.message, 'error');
+  }
 }
 
 // ========== КАТЕГОРИИ ==========
