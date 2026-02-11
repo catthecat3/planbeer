@@ -10,8 +10,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
   <!-- Preload критичных ресурсов -->
-  <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
-  <link rel="preload" as="image" href="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1600&q=80&auto=format&fit=crop">
+
+  <link rel="preload" as="image" href="https://raw.githubusercontent.com/catthecat3/planbeer/main/slide1.jpg">
+  <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow+Condensed:wght@300;400;500;600;700&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 
@@ -91,11 +92,14 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      transition: background 0.4s ease, top 0.3s ease;
+      background: transparent;
+      transition: background 0.35s ease, top 0.3s ease;
     }
     nav.scrolled {
-      background: rgba(13,13,13,0.95);
-      backdrop-filter: blur(12px);
+      background: rgba(13,13,13,0.96);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.04);
     }
     #tickerBar.hidden ~ nav,
     body:not(:has(#tickerBar)) nav {
@@ -1073,10 +1077,11 @@ try {
 
 // ===== SLIDESHOW =====
 const DEFAULT_SLIDES = [
-  "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1600&q=80&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1535958636474-b021ee887b13?w=1600&q=80&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1566633806827-5952db98a0a5?w=1600&q=80&auto=format&fit=crop"
+  "https://raw.githubusercontent.com/catthecat3/planbeer/main/slide1.jpg",
+  "https://raw.githubusercontent.com/catthecat3/planbeer/main/slide2.jpg",
+  "https://raw.githubusercontent.com/catthecat3/planbeer/main/slide3.jpg"
 ];
+const SLIDE_GRADIENTS = {};
 
 let slides = [...DEFAULT_SLIDES];
 let currentSlide = 0;
@@ -1094,7 +1099,13 @@ function buildSlides(urls) {
   urls.forEach((url, i) => {
     const div = document.createElement('div');
     div.className = 'slide' + (i === 0 ? ' active' : '');
-    div.style.backgroundImage = `url('${url}')`;
+    if (SLIDE_GRADIENTS && SLIDE_GRADIENTS[url]) {
+      div.style.background = SLIDE_GRADIENTS[url];
+    } else {
+      div.style.backgroundImage = `url('${url}')`;
+      div.style.backgroundSize = 'cover';
+      div.style.backgroundPosition = 'center';
+    }
     container.appendChild(div);
 
     const dot = document.createElement('div');
@@ -1103,10 +1114,12 @@ function buildSlides(urls) {
     dotsEl.appendChild(dot);
   });
 
-  // Предзагружаем первые 2 изображения явно
+  // Предзагружаем первые 2 реальных изображения (не градиенты)
   urls.slice(0, 2).forEach(url => {
-    const img = new Image();
-    img.src = url;
+    if (!SLIDE_GRADIENTS || !SLIDE_GRADIENTS[url]) {
+      const img = new Image();
+      img.src = url;
+    }
   });
 
   if (urls.length > 1) {
