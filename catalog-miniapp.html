@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>PLAN BEER — Каталог</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    body { 
+      font-family: 'Inter', sans-serif;
+      background-color: #f1f5f9;
+      color: #1e293b;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+    
+    body.tg-mode {
+      background-color: var(--tg-theme-bg-color, #f1f5f9);
+      color: var(--tg-theme-text-color, #1e293b);
+    }
+    
+    .font-heading { font-family: 'Playfair Display', serif; }
+    
+    input, textarea, select {
+      font-size: 16px !important;
+    }
+    
+    body.modal-open {
+      overflow: hidden;
+      position: fixed;
+      width: 100%;
+      height: 100%;
+    }
+    
+    /* ИСПРАВЛЕНИЕ для Telegram WebApp */
+    body.tg-mode.modal-open {
+      position: fixed;
+      width: 100%;
+      height: 100vh;
+      height: var(--tg-viewport-height, 100vh);
+    }
+    
+    /* Оставляем только переменные Telegram для tg-mode */
+    body.tg-mode .cart-modal-content {
+      max-height: var(--tg-viewport-stable-height, 70vh) !important;
+      min-height: 60vh !important;
+      height: var(--tg-viewport-height, 90vh) !important;
+      padding-bottom: calc(env(safe-area-inset-bottom, 16px) + 60px) !important;
+      border-radius: 24px 24px 0 0;
+      box-shadow: 0 -10px 40px rgba(0,0,0,0.2);
+      background: var(--tg-theme-bg-color, #fff) !important;
+      color: var(--tg-theme-text-color, #1e293b) !important;
+    }
+    
+    .btn-craft {
+      position: relative;
+      overflow: hidden;
+      transition: transform .2s, box-shadow .2s;
+      cursor: pointer;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    
+    .btn-craft:active {
+      transform: scale(0.95);
+    }
+
+    .product-card {
+      transition: transform .2s, box-shadow .2s;
+      background: white;
+      cursor: pointer;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    
+    body.tg-mode .product-card {
+      background: var(--tg-theme-secondary-bg-color, white);
+    }
+    
+    .product-card:active {
+      transform: scale(0.98);
+    }
+
+    .fade-up {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeUp 0.4s ease-out forwards;
+    }
+    
+    @keyframes fadeUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      left: 20px;
+      min-width: auto;
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 14px 18px;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+      z-index: 9999;
+      animation: slideInDown 0.3s ease-out;
+      backdrop-filter: blur(10px);
+      font-size: 14px;
+    }
+    
+    @keyframes slideInDown {
+      from { transform: translateY(-100px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    
+    .toast.removing {
+      animation: slideOutUp 0.3s ease-out forwards;
+    }
+    
+    @keyframes slideOutUp {
+      to { transform: translateY(-100px); opacity: 0; }
+    }
+
+    .category-filter {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 8px 0;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    .category-filter::-webkit-scrollbar { display: none; }
+
+    .category-btn {
+      padding: 10px 18px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 14px;
+      white-space: nowrap;
+      transition: all 0.2s;
+      border: 2px solid #e2e8f0;
+      background: white;
+      color: #475569;
+      cursor: pointer;
+      flex-shrink: 0;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    
+    body.tg-mode .category-btn {
+      background: var(--tg-theme-secondary-bg-color, white);
+      color: var(--tg-theme-text-color, #475569);
+      border-color: var(--tg-theme-hint-color, #e2e8f0);
+    }
+    
+    .category-btn:active {
+      transform: scale(0.95);
+    }
+    
+    .category-btn.active {
+      background: #f59e0b;
+      border-color: #f59e0b;
+      color: white;
+    }
+
+    .success-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      animation: fadeIn 0.2s ease-out;
+      padding: 20px;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    .success-content {
+      background: white;
+      border-radius: 20px;
+      padding: 28px 24px;
+      max-width: 380px;
+      width: 100%;
+      text-align: center;
+      animation: scaleIn 0.3s ease-out;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    
+    body.tg-mode .success-content {
+      background: var(--tg-theme-bg-color, white);
+      color: var(--tg-theme-text-color, #1e293b);
+    }
+    
+    @keyframes scaleIn {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    html, body {
+      width: 100%;
+      overflow-x: hidden;
+    }
+
+    .loading-spinner {
+      border: 3px solid #f3f4f6;
+      border-top: 3px solid #f59e0b;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    header {
+      background: white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+    
+    body.tg-mode header {
+      background: var(--tg-theme-secondary-bg-color, white);
+    }
+    
+    .cart-modal-content {
+      background: white;
+      border-radius: 24px 24px 0 0;
+      max-height: 95vh;
+      min-height: 80vh;
+      height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 -10px 40px rgba(0,0,0,0.2);
+      margin-bottom: 0;
+    }
+    
+    /* Удалено: теперь всё через переменные выше */
+    
+    @media (min-width: 768px) {
+      .cart-modal-content {
+        border-radius: 24px;
+        max-width: 480px;
+        max-height: 90vh;
+        min-height: 0;
+        height: auto;
+      }
+      body.tg-mode .cart-modal-content {
+        max-height: 80vh;
+        min-height: 0;
+        height: auto;
+      }
+    }
+    
+    input, select {
+      background: white;
+      color: #1e293b;
+      border: 2px solid #e2e8f0;
+    }
+    
+    body.tg-mode input,
+    body.tg-mode select {
+      background: #fff !important;
+      color: #1e293b !important;
+      border: 2px solid #e2e8f0 !important;
+      caret-color: #f59e0b !important;
+      box-shadow: none !important;
+      padding: 12px 16px !important;
+      font-size: 16px !important;
+    }
+    body.tg-mode input:focus,
+    body.tg-mode select:focus {
+      border-color: #f59e0b !important;
+      outline: none !important;
+      box-shadow: 0 0 0 2px #f59e0b22 !important;
+    }
+    
+    .cart-item {
+      border-bottom: 1px solid #e2e8f0;
+      padding: 12px 0;
+    }
+    
+    body.tg-mode .cart-item {
+      border-color: var(--tg-theme-hint-color, #e2e8f0);
+    }
+    
+    .fixed-cart-btn {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 16px;
+      background: white;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+      z-index: 30;
+    }
+    
+    body.tg-mode .fixed-cart-btn {
+      background: var(--tg-theme-bg-color, white);
+    }
+    
+    @media (min-width: 768px) {
+      .fixed-cart-btn {
+        display: none;
+      }
+    }
+    
+    .sync-indicator {
+      position: fixed;
+      bottom: 80px;
+      right: 16px;
+      background: #10b981;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      z-index: 50;
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    
+    /* --- Фикс светлой темы и читаемости для Telegram WebApp --- */
+    body.tg-mode,
+    body.tg-mode .cart-modal-content,
+    body.tg-mode .product-card,
+    body.tg-mode .success-content,
+    body.tg-mode header,
+    body.tg-mode .category-btn,
+    body.tg-mode input,
+    body.tg-mode select,
+    body.tg-mode .fixed-cart-btn {
+      background: #fff !important;
+      color: #1e293b !important;
+      border-color: #e2e8f0 !important;
+      box-shadow: none;
+    }
+    body.tg-mode input,
+    body.tg-mode select {
+      caret-color: #f59e0b !important;
+    }
+    body.tg-mode .cart-item {
+      border-color: #e2e8f0 !important;
+    }
+    /* Уже учтено выше */
+    @media (max-width: 600px) {
+      body.tg-mode .cart-modal-content {
+        position: fixed;
+        left: 0; right: 0; bottom: 0; top: auto;
+        width: 100vw;
+        min-height: 80vh;
+        max-height: 95vh;
+        height: 90vh;
+        z-index: 9999;
+      }
+    }
+    /* --- Конец фикса --- */
+  </style>
+</head>
+<body class="tg-mode">
+
+<header>
+  <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+    <div class="flex items-center gap-3">
+      <a href="index.html" class="text-2xl hover:scale-110 transition">←</a>
+      <div class="font-heading text-lg font-bold">🍺 PLAN BEER</div>
+    </div>
+    <button onclick="toggleCart()" class="font-semibold text-amber-600 transition text-sm hidden md:block">
+      🛒 Корзина (<span id="cartCount">0</span>)
+    </button>
+  </div>
+</header>
+
+<section class="max-w-7xl mx-auto px-4 py-3">
+  <div class="category-filter" id="categoryFilter">
+    <button class="category-btn active" onclick="filterByCategory('all')">Все товары</button>
+  </div>
+</section>
+
+<section id="productsGrid" class="max-w-7xl mx-auto px-4 pb-32 md:pb-24 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+</section>
+
+<div id="loadingMessage" class="text-center py-20">
+  <div class="loading-spinner"></div>
+  <p class="text-slate-500 mt-4 text-sm">Загрузка товаров из Firebase...</p>
+</div>
+
+<div id="emptyMessage" class="hidden text-center py-20">
+  <p class="text-xl text-slate-500 mb-2">📦 Товаров пока нет</p>
+  <p class="text-slate-400 text-sm">Добавьте товары через админку</p>
+</div>
+
+<div id="syncIndicator" class="sync-indicator hidden">
+  ● Синхронизировано
+</div>
+
+<div class="fixed-cart-btn md:hidden">
+  <button onclick="toggleCart()" class="w-full bg-amber-500 text-white py-4 rounded-xl font-bold shadow-lg">
+    🛒 Корзина (<span id="cartCountMobile">0</span>)
+  </button>
+</div>
+
+<!-- CART MODAL -->
+<div id="cart" class="fixed inset-0 bg-black/60 hidden z-50 flex items-end md:items-center justify-center">
+  <div class="cart-modal-content p-5 w-full">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="font-heading text-xl font-bold">Ваш заказ</h2>
+      <button onclick="toggleCart()" class="text-3xl hover:text-red-500 transition w-10 h-10 flex items-center justify-center">×</button>
+    </div>
+    
+    <div id="cartItems" class="mb-4"></div>
+    
+    <div id="cartTotal" class="border-t pt-4 mb-4 hidden">
+      <div class="flex justify-between text-lg font-bold">
+        <span>Итого:</span>
+        <span id="totalPrice" class="text-amber-600">0 ₽</span>
+      </div>
+    </div>
+    
+    <input id="customerName" placeholder="Ваше имя" 
+           class="w-full p-3 rounded-xl mb-3 focus:border-amber-500 focus:outline-none transition text-base">
+    
+    <input id="phone" placeholder="Телефон для связи" type="tel"
+          class="w-full p-3 rounded-xl mb-1 focus:border-amber-500 focus:outline-none transition text-base" maxlength="16" autocomplete="off">
+    <div id="phone-anchor" style="height:1px;"></div>
+    <div id="phoneError" class="text-red-500 text-xs mb-3 hidden">Пожалуйста, введите полный номер телефона</div>
+    <!-- Комментарий убран, будет на отдельном экране оформления -->
+    
+    <div id="orderBtnWrap">
+      <button onclick="createOrder()" 
+              id="orderBtn"
+              class="btn-craft w-full bg-amber-500 text-white py-4 rounded-xl font-bold text-base shadow-lg">
+        Оформить заказ
+      </button>
+    </div>
+    <script>
+    // Фиксируем кнопку внизу в tg-mode, но если input в фокусе — делаем обычной
+    function fixOrderBtn(forceStatic = false) {
+      const wrap = document.getElementById('orderBtnWrap');
+      if (!wrap) return;
+      if (document.body.classList.contains('tg-mode') && !forceStatic) {
+        wrap.style.position = 'fixed';
+        wrap.style.left = '0';
+        wrap.style.right = '0';
+        wrap.style.bottom = '0';
+        wrap.style.zIndex = '10000';
+        wrap.style.background = '#fff';
+        wrap.style.padding = '16px 16px calc(env(safe-area-inset-bottom, 16px) + 4px) 16px';
+        wrap.style.boxShadow = '0 -4px 20px rgba(0,0,0,0.08)';
+        document.querySelector('.cart-modal-content').style.paddingBottom = '120px';
+      } else {
+        wrap.style.position = '';
+        wrap.style.left = '';
+        wrap.style.right = '';
+        wrap.style.bottom = '';
+        wrap.style.zIndex = '';
+        wrap.style.background = '';
+        wrap.style.padding = '';
+        wrap.style.boxShadow = '';
+        document.querySelector('.cart-modal-content').style.paddingBottom = '';
+      }
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+      fixOrderBtn();
+      // Слушаем фокус/блюр на input/textarea в корзине и поднимаем модалку выше
+      const cart = document.getElementById('cart');
+      const cartModalContent = document.querySelector('.cart-modal-content');
+      // Новый способ: якорь под телефоном
+      function scrollPhoneAnchorIntoView() {
+        if (!isTelegramWebApp) return;
+        const anchor = document.getElementById('phone-anchor');
+        if (anchor) {
+          setTimeout(() => {
+            anchor.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center',
+              inline: 'nearest'
+            });
+          }, 250);
+        }
+      }
+      // Автофокус на телефон после имени (и в tg-mode, и в браузере)
+      const nameInput = document.getElementById('customerName');
+      const phoneInput = document.getElementById('phone');
+      if (nameInput && phoneInput) {
+        nameInput.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' || e.key === 'Next') {
+            e.preventDefault();
+            phoneInput.focus();
+          }
+        });
+      }
+      if (cart) {
+        cart.addEventListener('focusin', (e) => {
+          if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+            fixOrderBtn(true);
+            if (e.target.id === 'phone') {
+              scrollPhoneAnchorIntoView();
+            }
+          }
+        });
+        cart.addEventListener('focusout', (e) => {
+          setTimeout(() => {
+            if (!cart.querySelector('input:focus, textarea:focus')) {
+              fixOrderBtn();
+            }
+          }, 100);
+        });
+      }
+    });
+    window.addEventListener('resize', () => fixOrderBtn());
+    </script>
+  </div>
+</div>
+
+<!-- SUCCESS MODAL -->
+<div id="successModal" class="success-modal hidden">
+  <div class="success-content">
+    <div class="text-5xl mb-3">✅</div>
+    <h2 class="text-xl font-bold mb-2">Заказ оформлен!</h2>
+    <p class="text-slate-600 mb-5 text-sm leading-relaxed">Ваш заказ принят. Мы скоро свяжемся с вами для подтверждения.</p>
+    <p class="text-xs text-slate-500 mb-5">Номер заказа: <strong id="orderNumber" class="text-amber-600"></strong></p>
+    <button onclick="closeSuccessModal()" class="btn-craft bg-amber-500 text-white px-8 py-3 rounded-xl font-bold hover:bg-amber-600 transition w-full mb-3">
+      Отлично!
+    </button>
+    <button onclick="startNewOrder()" class="btn-craft bg-white text-amber-600 border border-amber-500 px-8 py-3 rounded-xl font-bold hover:bg-amber-50 transition w-full mb-2">
+      Новый заказ
+    </button>
+    <script>
+    // Новый заказ: закрыть модалку, открыть корзину
+    function startNewOrder() {
+      closeSuccessModal();
+      setTimeout(() => {
+        toggleCart();
+      }, 200);
+    }
+    // После заказа всегда показываем кнопку корзины (на всякий случай)
+    function showCartBtn() {
+      const fixedBtn = document.querySelector('.fixed-cart-btn');
+      if (fixedBtn) fixedBtn.style.display = 'block';
+    }
+    </script>
+    <a id="tgLink" href="https://t.me/patikoroley" target="_blank" rel="noopener noreferrer" class="block text-sm text-amber-600 hover:text-amber-700 font-semibold">
+      📱 Написать продавцу
+    </a>
+  </div>
+</div>
+
+<script>
+// ========================================
+// КОНФИГУРАЦИЯ FIREBASE - ЗАМЕНИТЕ НА СВОИ ДАННЫЕ!
+// ========================================
+const firebaseConfig = {
+  apiKey: "AIzaSyBcGBRRqjAEomg6P0DvQoR-FrXsyFC7dXk",
+  authDomain: "planbeer-218de.firebaseapp.com",
+  databaseURL: "https://planbeer-218de-default-rtdb.firebaseio.com",
+  projectId: "planbeer-218de",
+  storageBucket: "planbeer-218de.firebasestorage.app",
+  messagingSenderId: "571000195828",
+  appId: "1:571000195828:web:bda2bbab90eb7eba182ca1"
+};
+
+// Telegram Bot настройки
+const TELEGRAM_BOT_TOKEN = "8415946942:AAHCyjLJhW8p7GmJew2m7Pxycs-yEkbndhw";
+const TELEGRAM_CHAT_ID = "788399571";
+const ADMIN_TG = "patikoroley";
+
+// Инициализация Firebase
+let db = null;
+let isFirebaseInitialized = false;
+
+try {
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.database();
+  isFirebaseInitialized = true;
+  console.log('✅ Firebase инициализирован');
+} catch (error) {
+  console.error('❌ Ошибка инициализации Firebase:', error);
+  showToast('Ошибка подключения к базе данных', 'error');
+}
+
+let cart = [];
+let products = [];
+let currentCategory = 'all';
+let isTelegramWebApp = false;
+let tg = null;
+
+// Маска для телефона
+document.addEventListener('DOMContentLoaded', function() {
+  const phoneInput = document.getElementById('phone');
+  if (phoneInput) {
+    phoneInput.value = '+7 ';
+    phoneInput.addEventListener('input', function(e) {
+      let val = phoneInput.value.replace(/[^\d]/g, '');
+      if (val.startsWith('7')) val = val.slice(1); // убираем лишнюю 7 если пользователь ввёл
+      if (val.length > 10) val = val.slice(0, 10);
+      let formatted = '+7 ';
+      if (val.length > 0) formatted += val.substring(0, 3);
+      if (val.length > 3) formatted += '-' + val.substring(3, 6);
+      if (val.length > 6) formatted += '-' + val.substring(6, 8);
+      if (val.length > 8) formatted += '-' + val.substring(8, 10);
+      phoneInput.value = formatted;
+      // Проверка на длину
+      const phoneError = document.getElementById('phoneError');
+      if (val.length < 10) {
+        phoneError.classList.remove('hidden');
+      } else {
+        phoneError.classList.add('hidden');
+      }
+    });
+    phoneInput.addEventListener('keydown', function(e) {
+      // Запрет букв и спецсимволов кроме Backspace, Delete, стрелок
+      if (
+        !['Backspace','Delete','ArrowLeft','ArrowRight','Tab'].includes(e.key) &&
+        (e.key.length === 1 && !/\d/.test(e.key))
+      ) {
+        e.preventDefault();
+      }
+      // Не даём удалить +7 
+      if ((phoneInput.selectionStart <= 3) && (e.key === 'Backspace' || e.key === 'Delete')) {
+        e.preventDefault();
+      }
+    });
+    // При фокусе курсор после +7 
+    phoneInput.addEventListener('focus', function() {
+      if (phoneInput.value.length < 4) phoneInput.value = '+7 ';
+      setTimeout(() => {
+        if (phoneInput.selectionStart < 4) phoneInput.setSelectionRange(phoneInput.value.length, phoneInput.value.length);
+      }, 0);
+    });
+  }
+});
+// Инициализация Telegram WebApp
+function initTelegramWebApp() {
+  if (window.Telegram && window.Telegram.WebApp) {
+    tg = window.Telegram.WebApp;
+    isTelegramWebApp = true;
+    document.body.classList.add('tg-mode');
+    
+    // ИСПРАВЛЕНИЕ: Правильная настройка для Telegram
+    tg.ready();
+    tg.expand();
+    tg.enableClosingConfirmation();
+    
+    // Устанавливаем цвет header
+    if (tg.setHeaderColor) {
+      tg.setHeaderColor(tg.themeParams.secondary_bg_color || '#ffffff');
+    }
+    
+    // Применяем тему
+    if (tg.themeParams) {
+      document.body.style.backgroundColor = tg.themeParams.bg_color || '#f1f5f9';
+      
+      // Устанавливаем CSS переменные для viewport
+      document.documentElement.style.setProperty('--tg-viewport-height', tg.viewportHeight + 'px');
+      document.documentElement.style.setProperty('--tg-viewport-stable-height', tg.viewportStableHeight + 'px');
+    }
+    
+    // Обновляем viewport при изменениях
+    tg.onEvent('viewportChanged', () => {
+      if (tg.viewportHeight) {
+        document.documentElement.style.setProperty('--tg-viewport-height', tg.viewportHeight + 'px');
+      }
+      if (tg.viewportStableHeight) {
+        document.documentElement.style.setProperty('--tg-viewport-stable-height', tg.viewportStableHeight + 'px');
+      }
+    });
+    
+    // Получаем данные пользователя
+    if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+      const user = tg.initDataUnsafe.user;
+      let userName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+      // Не подставлять если пусто, точка или только пробелы
+      if (userName && userName !== '.' && userName.replace(/\s/g, '') !== '') {
+        setTimeout(() => {
+          const nameInput = document.getElementById('customerName');
+          if (nameInput) nameInput.value = userName;
+        }, 100);
+      }
+    }
+    
+    console.log('✅ Telegram WebApp initialized');
+    console.log('Viewport height:', tg.viewportHeight);
+    console.log('Stable height:', tg.viewportStableHeight);
+  }
+}
+
+function showToast(message, type = 'success') {
+  if (isTelegramWebApp && tg && tg.showPopup) {
+    tg.showPopup({
+      title: type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️',
+      message: message
+    });
+  }
+  
+  const toast = document.createElement('div');
+  toast.className = `toast ${type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500'} text-white`;
+  const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+  toast.innerHTML = `<div class="flex items-center gap-3"><span class="text-xl">${icon}</span><span class="font-semibold flex-1">${message}</span></div>`;
+  document.body.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add('removing');
+    setTimeout(() => toast.remove(), 300);
+  }, 2500);
+}
+
+function showSyncIndicator() {
+  const indicator = document.getElementById('syncIndicator');
+  indicator.classList.remove('hidden');
+  setTimeout(() => {
+    indicator.classList.add('hidden');
+  }, 2000);
+}
+
+async function sendTelegramNotification(order) {
+  if (TELEGRAM_BOT_TOKEN === "YOUR_BOT_TOKEN" || TELEGRAM_CHAT_ID === "YOUR_CHAT_ID") {
+    console.log('⚠️ Telegram уведомления не настроены');
+    return false;
+  }
+
+  let message = `🔔 <b>НОВЫЙ ЗАКАЗ №${order.id}</b>\n\n`;
+  message += `👤 <b>Имя:</b> ${order.name}\n`;
+  message += `📞 <b>Телефон:</b> ${order.phone}\n\n`;
+  message += `📦 <b>Товары:</b>\n`;
+  
+  order.items.forEach(item => {
+    message += `  • ${item.name} x${item.count} = ${item.total}₽\n`;
+  });
+  
+  message += `\n💰 <b>Итого:</b> ${order.total}₽\n`;
+  message += `\n🕐 <b>Время:</b> ${order.date}`;
+  
+  if (isTelegramWebApp && tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+    const user = tg.initDataUnsafe.user;
+    message += `\n\n👨‍💼 <b>Заказчик в Telegram:</b> @${user.username || 'без username'}`;
+    message += `\n🆔 <b>User ID:</b> ${user.id}`;
+  }
+
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: TELEGRAM_CHAT_ID,
+        text: message,
+        parse_mode: 'HTML'
+      })
+    });
+    
+    const data = await response.json();
+    return data.ok;
+  } catch (error) {
+    console.error('❌ Ошибка при отправке уведомления:', error);
+    return false;
+  }
+}
+
+// Загрузка товаров из Firebase
+function loadProducts() {
+  if (!isFirebaseInitialized || !db) {
+    console.error('Firebase не инициализирован');
+    document.getElementById('loadingMessage').classList.add('hidden');
+    document.getElementById('emptyMessage').classList.remove('hidden');
+    return;
+  }
+
+  const productsRef = db.ref('products');
+  
+  // Слушаем изменения в реальном времени
+  productsRef.on('value', (snapshot) => {
+    const data = snapshot.val();
+    
+    if (data && Array.isArray(data)) {
+      products = data;
+    } else if (data) {
+      products = Object.values(data);
+    } else {
+      products = [];
+    }
+    
+    document.getElementById('loadingMessage').classList.add('hidden');
+    
+    if (products.length === 0) {
+      document.getElementById('productsGrid').classList.add('hidden');
+      document.getElementById('emptyMessage').classList.remove('hidden');
+    } else {
+      showSyncIndicator();
+      renderCategoryFilter();
+      renderProducts();
+    }
+    
+    console.log(`✅ Загружено товаров: ${products.length}`);
+  }, (error) => {
+    console.error('Ошибка загрузки товаров:', error);
+    document.getElementById('loadingMessage').classList.add('hidden');
+    showToast('Ошибка загрузки товаров', 'error');
+  });
+}
+
+function renderCategoryFilter() {
+  const categories = new Set(['all']);
+  products.forEach(p => {
+    if (p.category) categories.add(p.category);
+  });
+  const filterContainer = document.getElementById('categoryFilter');
+  const categoryButtons = Array.from(categories).map(cat => {
+    const isActive = cat === currentCategory;
+    const displayName = cat === 'all' ? 'Все товары' : cat;
+    return `<button class="category-btn ${isActive ? 'active' : ''}" onclick="filterByCategory('${cat}')">${displayName}</button>`;
+  }).join('');
+  filterContainer.innerHTML = categoryButtons;
+}
+
+function filterByCategory(category) {
+  currentCategory = category;
+  renderCategoryFilter();
+  renderProducts();
+  
+  if (isTelegramWebApp && tg) {
+    tg.HapticFeedback.impactOccurred('light');
+  }
+}
+
+function renderProducts() {
+  const grid = document.getElementById('productsGrid');
+  const emptyMsg = document.getElementById('emptyMessage');
+  const filteredProducts = currentCategory === 'all' ? products : products.filter(p => p.category === currentCategory);
+  
+  if (filteredProducts.length === 0) {
+    grid.classList.add('hidden');
+    emptyMsg.classList.remove('hidden');
+    return;
+  }
+  
+  grid.classList.remove('hidden');
+  emptyMsg.classList.add('hidden');
+  
+  grid.innerHTML = filteredProducts.map((product, index) => {
+    const realIndex = products.indexOf(product);
+    const isBeer = product.category && (product.category.toLowerCase() === 'пиво' || product.category.toLowerCase() === 'крафтовое пиво');
+    const literId = `liter-amount-${realIndex}`;
+    const priceId = `price-amount-${realIndex}`;
+    return `
+      <div class="product-card rounded-xl shadow-sm hover:shadow-md transition fade-up overflow-hidden flex flex-col h-full" style="animation-delay: ${index * 0.05}s">
+        <div class="relative">
+          <img src="${product.image}" class="w-full h-36 object-contain bg-slate-50" alt="${product.name}" loading="lazy" onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'">
+          ${product.category ? `<span class="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded-lg text-xs font-semibold">${product.category}</span>` : ''}
+        </div>
+        <div class="p-3 flex flex-col flex-1">
+          <h3 class="font-bold mb-1 text-sm leading-tight">${product.name}</h3>
+          <p class="text-xs text-slate-600 mb-2">${product.desc}</p>
+          <div class="mb-2 flex flex-col gap-1">
+            ${isBeer ? `
+              <div class=\"flex items-center justify-center gap-1 bg-slate-100 rounded-lg py-1\">
+                <button type=\"button\" class=\"w-7 h-7 flex items-center justify-center bg-white border border-slate-300 rounded-full font-bold text-lg hover:bg-slate-200 transition\" onclick=\"changeLiter('${literId}','${priceId}',${product.price},-0.5)\">-</button>
+                <span id=\"${literId}\" class=\"font-semibold text-base mx-2\" style=\"min-width:2.5em;display:inline-block;text-align:center;\">1 л</span>
+                <button type=\"button\" class=\"w-7 h-7 flex items-center justify-center bg-white border border-slate-300 rounded-full font-bold text-lg hover:bg-slate-200 transition\" onclick=\"changeLiter('${literId}','${priceId}',${product.price},0.5)\">+</button>
+              </div>
+              <p id=\"${priceId}\" class=\"text-base font-bold text-amber-600 text-center\">${product.price} ₽</p>
+            ` : `
+              <div class=\"flex items-center justify-center gap-1 bg-slate-100 rounded-lg py-1\">
+                <button type=\"button\" class=\"w-7 h-7 flex items-center justify-center bg-white border border-slate-300 rounded-full font-bold text-lg hover:bg-slate-200 transition\" onclick=\"changeCount('${literId}','${priceId}',${product.price},-1)\">-</button>
+                <span id=\"${literId}\" class=\"font-semibold text-base mx-2\" style=\"min-width:2.5em;display:inline-block;text-align:center;\">1 шт</span>
+                <button type=\"button\" class=\"w-7 h-7 flex items-center justify-center bg-white border border-slate-300 rounded-full font-bold text-lg hover:bg-slate-200 transition\" onclick=\"changeCount('${literId}','${priceId}',${product.price},1)\">+</button>
+              </div>
+              <p id=\"${priceId}\" class=\"text-base font-bold text-amber-600 text-center\">${product.price} ₽</p>
+            `}
+          </div>
+          <div class="mt-auto">
+            <button onclick="addToCart(${realIndex}${isBeer ? `, true` : ''})" class="btn-craft w-full bg-amber-500 text-white py-2 rounded-lg font-semibold text-sm mt-2">
+              В корзину
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function addToCart(index, isBeer) {
+  const product = products[index];
+  let amount = 1;
+  let label = '';
+  let price = product.price;
+  if (isBeer) {
+    const literEl = document.getElementById(`liter-amount-${index}`);
+    if (literEl) {
+      amount = parseFloat(literEl.textContent.replace(/[^\d.,]/g, '').replace(',', '.'));
+      if (isNaN(amount) || amount <= 0) amount = 1;
+    }
+    price = Math.round(product.price * amount * 100) / 100;
+    label = ` (${amount} л)`;
+    cart.push({ name: product.name + label, price: price, liter: amount });
+  } else {
+    const countEl = document.getElementById(`liter-amount-${index}`);
+    if (countEl) {
+      amount = parseInt(countEl.textContent.replace(/[^\d]/g, ''));
+      if (isNaN(amount) || amount <= 0) amount = 1;
+    }
+    price = product.price * amount;
+    label = ` (${amount} шт)`;
+    cart.push({ name: product.name + label, price: price, count: amount });
+  }
+  updateCount();
+  renderCart();
+  showToast(`${product.name} добавлен!`);
+  if (isTelegramWebApp && tg) {
+    tg.HapticFeedback.impactOccurred('light');
+  }
+}
+
+function changeLiter(literId, priceId, pricePerLiter, delta) {
+  const literEl = document.getElementById(literId);
+  const priceEl = document.getElementById(priceId);
+  if (!literEl || !priceEl) return;
+  let value = parseFloat(literEl.textContent);
+  value = Math.max(0.5, Math.round((value + delta) * 2) / 2); // шаг 0.5, минимум 0.5
+  literEl.textContent = value + ' л';
+  const newPrice = Math.round(pricePerLiter * value * 100) / 100;
+  priceEl.textContent = newPrice + ' ₽';
+}
+
+function changeCount(countId, priceId, pricePerOne, delta) {
+  const countEl = document.getElementById(countId);
+  const priceEl = document.getElementById(priceId);
+  if (!countEl || !priceEl) return;
+  let value = parseInt(countEl.textContent);
+  value = Math.max(1, value + delta); // минимум 1
+  countEl.textContent = value + ' шт';
+  const newPrice = pricePerOne * value;
+  priceEl.textContent = newPrice + ' ₽';
+}
+
+function updateCount() {
+  const count = cart.length;
+  document.getElementById("cartCount").innerText = count;
+  document.getElementById("cartCountMobile").innerText = count;
+}
+
+function toggleCart() {
+  // В Mini App при открытии корзины сразу идём на экран оформления
+  if (isTelegramWebApp && tg) {
+    const cartEl = document.getElementById("cart");
+    const isHidden = cartEl.classList.contains("hidden");
+    
+    if (isHidden && cart.length > 0) {
+      // Открываем экран оформления вместо модалки
+      openCheckoutScreen();
+      return;
+    } else if (isHidden && cart.length === 0) {
+      showToast('Корзина пуста');
+      return;
+    }
+  }
+  
+  // Обычная логика для браузера
+  const cartEl = document.getElementById("cart");
+  const isHidden = cartEl.classList.contains("hidden");
+  
+  cartEl.classList.toggle("hidden");
+  
+  if (isHidden) {
+    document.body.classList.add("modal-open");
+  } else {
+    document.body.classList.remove("modal-open");
+  }
+  
+  renderCart();
+  
+  // ИСПРАВЛЕНИЕ: Прокручиваем модалку наверх в Telegram
+  if (!isHidden && isTelegramWebApp) {
+    setTimeout(() => {
+      const modalContent = document.querySelector('.cart-modal-content');
+      if (modalContent) modalContent.scrollTop = 0;
+    }, 100);
+  }
+}
+
+function renderCart() {
+  const container = document.getElementById("cartItems");
+  const totalEl = document.getElementById("cartTotal");
+  
+  if (cart.length === 0) {
+    container.innerHTML = '<p class="text-center text-slate-500 py-6 text-sm">Корзина пуста</p>';
+    totalEl.classList.add('hidden');
+    return;
+  }
+  
+  let total = 0;
+  const grouped = {};
+  cart.forEach(item => {
+    // Для товаров с литрами группируем по имени и литражу
+    const key = item.liter ? `${item.name}` : item.name;
+    if (grouped[key]) {
+      grouped[key].count++;
+      grouped[key].total += item.price;
+    } else {
+      grouped[key] = { count: 1, price: item.price, total: item.price, liter: item.liter };
+    }
+    total += item.price;
+  });
+
+  container.innerHTML = Object.keys(grouped).map(name => {
+    const item = grouped[name];
+    return `
+      <div class="cart-item flex justify-between items-center">
+        <div class="flex-1">
+          <p class="font-semibold text-sm">${name}</p>
+          <p class="text-xs text-slate-500">${item.count} шт × ${item.price} ₽${item.liter ? ` (${item.liter} л)` : ''}</p>
+        </div>
+        <p class="font-bold text-sm text-amber-600">${item.total} ₽</p>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('totalPrice').textContent = total + ' ₽';
+  totalEl.classList.remove('hidden');
+}
+
+async function createOrder() {
+  const name = document.getElementById("customerName").value.trim();
+  const phoneInput = document.getElementById("phone");
+  const phone = phoneInput.value.trim();
+  const phoneError = document.getElementById('phoneError');
+  const comment = document.getElementById('orderComment') ? document.getElementById('orderComment').value.trim() : '';
+
+  if (!name) {
+    showToast("Введите ваше имя!", 'error');
+    return;
+  }
+
+  // Проверка номера: только 10 цифр после +7
+  let phoneDigits = phone.replace(/[^\d]/g, '');
+  if (phoneDigits.startsWith('7')) phoneDigits = phoneDigits.slice(1);
+  if (phoneDigits.length < 10) {
+    phoneError.classList.remove('hidden');
+    showToast("Введите полный номер телефона!", 'error');
+    phoneInput.focus();
+    return;
+  } else {
+    phoneError.classList.add('hidden');
+  }
+
+  if (cart.length === 0) {
+    showToast("Добавьте товары в корзину!", 'error');
+    return;
+  }
+
+  const grouped = {};
+  cart.forEach(item => {
+    // Для товаров с литрами группируем по имени и литражу
+    const key = item.liter ? `${item.name}` : item.name;
+    if (grouped[key]) {
+      grouped[key].count++;
+      grouped[key].total += item.price;
+    } else {
+      grouped[key] = { count: 1, price: item.price, total: item.price, liter: item.liter };
+    }
+  });
+
+  const total = cart.reduce((sum, item) => sum + item.price, 0);
+  const orderId = Date.now();
+
+  const order = {
+    id: orderId,
+    name: name,
+    phone: phone,
+    comment: comment,
+    items: Object.keys(grouped).map(name => {
+      const item = grouped[name];
+      const base = {
+        name,
+        count: item.count,
+        total: item.total
+      };
+      if (typeof item.liter !== 'undefined') base.liter = item.liter;
+      return base;
+    }),
+    total: total,
+    status: 'new',
+    date: new Date().toLocaleString('ru-RU')
+  };
+
+  console.log('📦 Создаём заказ:', order);
+
+  // Сохраняем заказ в Firebase
+  let orderSaved = false;
+  let firebaseError = null;
+  if (isFirebaseInitialized && db) {
+    try {
+      const orderRef = await db.ref('orders').push(order);
+      console.log('✅ Заказ сохранен в Firebase с ключом:', orderRef.key);
+      orderSaved = true;
+    } catch (error) {
+      console.error('❌ Ошибка сохранения заказа в Firebase:', error);
+      firebaseError = error;
+    }
+  } else {
+    console.warn('⚠️ Firebase не инициализирован, заказ не сохранен');
+    firebaseError = 'Firebase не инициализирован';
+  }
+
+  if (!orderSaved) {
+    showToast('Ошибка сохранения заказа: ' + (firebaseError && firebaseError.message ? firebaseError.message : firebaseError || ''), 'error');
+    return; // Прерываем выполнение, чтобы не было путаницы и лишних действий
+  }
+
+  // Отправляем уведомление в Telegram
+  await sendTelegramNotification(order);
+
+  // Формируем ссылку для связи
+  let orderText = `📋 Заказ №${orderId}%0A%0A👤 ${name}%0A📞 ${phone}%0A`;
+  if (comment) orderText += `%0A💬 ${comment}%0A`;
+  orderText += `%0A`;
+  Object.keys(grouped).forEach(name => {
+    const item = grouped[name];
+    orderText += `• ${name} x${item.count}${item.liter ? ` (${item.liter} л)` : ''} = ${item.total}₽%0A`;
+  });
+  orderText += `%0A💰 Итого: ${total}₽`;
+
+  document.getElementById('orderNumber').textContent = `#${orderId}`;
+  document.getElementById('tgLink').href = `https://t.me/${ADMIN_TG}?text=${orderText}`;
+
+  document.getElementById("cart").classList.add("hidden");
+  document.getElementById('successModal').classList.remove('hidden');
+  document.body.classList.add("modal-open");
+  showCartBtn();
+  if (isTelegramWebApp && tg) {
+    tg.HapticFeedback.notificationOccurred('success');
+  }
+  cart = [];
+  updateCount();
+}
+
+function closeSuccessModal() {
+  document.getElementById('successModal').classList.add('hidden');
+  document.body.classList.remove("modal-open");
+  // Не закрываем WebApp, просто скрываем модалку
+}
+
+// Закрытие модалок по клику на фон
+document.getElementById('cart').addEventListener('click', function(e) {
+  if (e.target === this) {
+    toggleCart();
+  }
+});
+
+document.getElementById('successModal').addEventListener('click', function(e) {
+  if (e.target === this) {
+    closeSuccessModal();
+  }
+});
+
+
+// ========== MINI APP ФУНКЦИИ ==========
+
+function openCheckoutScreen() {
+  const screen = document.getElementById('checkoutScreen');
+  screen.classList.remove('hidden');
+  
+  // Автозаполнение из Telegram
+  if (window.Telegram && window.Telegram.WebApp) {
+    const user = window.Telegram.WebApp.initDataUnsafe?.user;
+    if (user) {
+      const nameInput = document.getElementById('checkoutName');
+      if (!nameInput.value && (user.first_name || user.last_name)) {
+        nameInput.value = [user.first_name, user.last_name].filter(Boolean).join(' ');
+      }
+    }
+    
+    // Показываем MainButton
+    window.Telegram.WebApp.MainButton.setText('Отправить заказ');
+    window.Telegram.WebApp.MainButton.show();
+    window.Telegram.WebApp.MainButton.onClick(submitOrderMiniApp);
+    
+    // BackButton для закрытия
+    window.Telegram.WebApp.BackButton.show();
+    window.Telegram.WebApp.BackButton.onClick(closeCheckout);
+  }
+  
+  // Обновляем итого
+  updateCheckoutSummary();
+}
+
+function closeCheckout() {
+  const screen = document.getElementById('checkoutScreen');
+  screen.classList.add('hidden');
+  
+  if (window.Telegram && window.Telegram.WebApp) {
+    window.Telegram.WebApp.MainButton.hide();
+    window.Telegram.WebApp.BackButton.hide();
+  }
+}
+
+function updateCheckoutSummary() {
+  const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  document.getElementById('checkoutTotal').textContent = total.toLocaleString('ru-RU') + ' ₽';
+  
+  const itemsText = cart.map(item => `${item.name} × ${item.quantity}`).join(', ');
+  document.getElementById('checkoutItems').textContent = itemsText;
+}
+
+async function submitOrderMiniApp() {
+  const name = document.getElementById('checkoutName').value.trim();
+  const phone = document.getElementById('checkoutPhone').value.trim();
+  const comment = document.getElementById('checkoutComment').value.trim();
+  
+  if (!name) {
+    showToast('Укажите ваше имя');
+    return;
+  }
+  if (!phone) {
+    showToast('Укажите номер телефона');
+    return;
+  }
+  
+  // Отключаем MainButton на время отправки
+  if (window.Telegram && window.Telegram.WebApp) {
+    window.Telegram.WebApp.MainButton.showProgress();
+  }
+  
+  try {
+    const order = {
+      name,
+      phone,
+      comment,
+      items: cart,
+      total: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+      timestamp: Date.now(),
+      telegramUser: window.Telegram?.WebApp?.initDataUnsafe?.user?.id || null
+    };
+    
+    await db.ref('orders').push(order);
+    
+    // Закрываем экран и очищаем корзину
+    closeCheckout();
+    cart = [];
+    saveCart();
+    updateCartBadge();
+    
+    // Показываем успех
+    showSuccessModal(order.total);
+    
+    if (window.Telegram && window.Telegram.WebApp) {
+      window.Telegram.WebApp.MainButton.hideProgress();
+      window.Telegram.WebApp.showAlert('Заказ принят! Мы скоро свяжемся с вами.');
+    }
+  } catch (error) {
+    console.error('Order error:', error);
+    showToast('Ошибка отправки заказа. Попробуйте ещё раз.');
+    
+    if (window.Telegram && window.Telegram.WebApp) {
+      window.Telegram.WebApp.MainButton.hideProgress();
+    }
+  }
+}
+
+// Инициализация
+initTelegramWebApp();
+loadProducts();
+</script>
+
+<!-- ЭКРАН ОФОРМЛЕНИЯ ЗАКАЗА (только для Mini App) -->
+<div id="checkoutScreen" class="hidden fixed inset-0 bg-white z-50 overflow-y-auto" style="padding-bottom:env(safe-area-inset-bottom);">
+  <div class="p-5">
+    <div class="flex items-center gap-3 mb-6">
+      <button onclick="closeCheckout()" class="text-slate-600 hover:text-slate-900">
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+      </button>
+      <h2 class="font-heading text-2xl font-bold">Оформление</h2>
+    </div>
+
+    <div class="space-y-4">
+      <!-- Имя -->
+      <div>
+        <label class="block text-sm font-semibold mb-2 text-slate-700">Ваше имя</label>
+        <input type="text" id="checkoutName" placeholder="Иван" 
+               class="w-full p-4 rounded-xl border-2 border-slate-200 focus:border-amber-500 focus:outline-none transition text-base">
+      </div>
+
+      <!-- Телефон -->
+      <div>
+        <label class="block text-sm font-semibold mb-2 text-slate-700">Телефон</label>
+        <input type="tel" id="checkoutPhone" placeholder="+7 (999) 123-45-67" 
+               class="w-full p-4 rounded-xl border-2 border-slate-200 focus:border-amber-500 focus:outline-none transition text-base">
+      </div>
+
+      <!-- Комментарий -->
+      <div>
+        <label class="block text-sm font-semibold mb-2 text-slate-700">Комментарий (необязательно)</label>
+        <textarea id="checkoutComment" placeholder="Укажите время доставки, адрес или другие пожелания" 
+                  class="w-full p-4 rounded-xl border-2 border-slate-200 focus:border-amber-500 focus:outline-none transition text-base resize-none" 
+                  rows="3" maxlength="300"></textarea>
+      </div>
+
+      <!-- Итого -->
+      <div class="bg-slate-100 rounded-xl p-4 mt-6">
+        <div class="flex justify-between items-center">
+          <span class="text-slate-600">Итого:</span>
+          <span class="font-bold text-2xl text-amber-600" id="checkoutTotal">0 ₽</span>
+        </div>
+        <div class="text-xs text-slate-500 mt-2" id="checkoutItems"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
+
+
