@@ -1230,6 +1230,18 @@ function openCheckoutScreen() {
   updateCheckoutSummary();
 }
 
+
+function showSuccessModal(total) {
+  const modal = document.getElementById('successModal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    setTimeout(() => modal.classList.add('hidden'), 3000);
+  } else {
+    // Если модалки нет, просто показываем toast
+    showToast('✅ Заказ принят на сумму ' + total.toLocaleString('ru-RU') + ' ₽');
+  }
+}
+
 function closeCheckout() {
   const screen = document.getElementById('checkoutScreen');
   screen.classList.add('hidden');
@@ -1290,8 +1302,7 @@ async function submitOrderMiniApp() {
     // Закрываем экран и очищаем корзину
     closeCheckout();
     cart = [];
-    saveCart();
-    updateCartBadge();
+    updateCount(); // Обновляем счётчик корзины
     
     // Показываем успех
     showSuccessModal(order.total);
